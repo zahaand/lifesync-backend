@@ -76,7 +76,7 @@ All schema changes via Liquibase only. Direct DDL is PROHIBITED.
 Files organised under `db/changelog/{domain}/`.
 Every changeset MUST have a rollback block.
 Applied changesets MUST NOT be modified.
-XML comments in migration files are PROHIBITED.
+XML comments inside <changeSet> blocks are PROHIBITED.
 
 ### VI. Secrets via Environment Variables
 
@@ -168,7 +168,7 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
    - Consumers: `{Purpose}Consumer`
    - DTOs: `{Entity}{Action}RequestDto`, `{Entity}ResponseDto`
      (Dto suffix mandatory)
-   - Liquibase: `V{n}__{description}.sql`
+   - Liquibase: `V{n}__{description}.xml`
    - Tests: `{Class}Test` (unit), `{Class}IT` (integration)
    - Test methods: `should{Result}When{Condition}`
 4. **Utility classes**: `Utils` suffix + private no-arg constructor.

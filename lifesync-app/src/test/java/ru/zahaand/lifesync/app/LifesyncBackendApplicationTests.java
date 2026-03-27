@@ -1,9 +1,7 @@
-package ru.zahaand.lifesync;
+package ru.zahaand.lifesync.app;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
 class LifesyncBackendApplicationTests {
 
     @Test

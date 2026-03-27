@@ -117,6 +117,7 @@ A developer or tester opens the Swagger UI documentation page, browses all avail
 - **FR-023**: All authentication endpoints (register, login, refresh, logout) MUST be publicly accessible without requiring an existing token.
 - **FR-024**: System MUST return appropriate error messages for validation failures without exposing internal details.
 - **FR-025**: System MUST not reveal whether an email or username is already taken during failed login attempts (to prevent user enumeration).
+- **FR-026**: Banned users (enabled=false) attempting to authenticate MUST receive HTTP 403 with message "Account is disabled". Revealing account existence at this point is acceptable — ban is an admin action, not a security boundary.
 
 ### Key Entities
 
@@ -160,3 +161,5 @@ A developer or tester opens the Swagger UI documentation page, browses all avail
 - The Telegram chat ID is provided by the user (obtained from the Telegram bot interaction) — the system stores it but does not validate it against Telegram's API.
 - Pagination defaults for admin user listing: page-based with a default page size of 20 items.
 - Password strength requirements: minimum 8 characters with at least one uppercase letter, one lowercase letter, and one digit.
+- Registration intentionally returns 409 on duplicate email/username — this is standard UX (user must know the field is taken). Login intentionally does not reveal whether email/username exists — returns generic 401 in both cases. This asymmetry is by design.
+- JwtAuthenticationFilter is placed in lifesync-web (HTTP layer concern). SecurityConfig (filter chain wiring) is placed in lifesync-app. This respects the constitution: web handles HTTP concerns, app handles top-level wiring.

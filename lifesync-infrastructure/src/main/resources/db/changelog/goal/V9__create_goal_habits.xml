@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="V9-create-goal-habits" author="zahaand">
+        <createTable tableName="goal_habits">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="goal_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="habit_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="goal_habits" columnNames="goal_id, habit_id"
+                             constraintName="uq_goal_habits_goal_habit"/>
+        <addForeignKeyConstraint baseTableName="goal_habits" baseColumnNames="goal_id"
+                                 constraintName="fk_goal_habits_goal"
+                                 referencedTableName="goals" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="goal_habits" baseColumnNames="habit_id"
+                                 constraintName="fk_goal_habits_habit"
+                                 referencedTableName="habits" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <rollback>
+            <dropAllForeignKeyConstraints baseTableName="goal_habits"/>
+            <dropTable tableName="goal_habits"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

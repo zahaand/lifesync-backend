@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="db/changelog/user/V1__create_users.xml"/>
+    <include file="db/changelog/user/V2__create_user_profiles.xml"/>
+    <include file="db/changelog/user/V3__create_refresh_tokens.xml"/>
+
+    <include file="db/changelog/habit/V4__create_habits.xml"/>
+    <include file="db/changelog/habit/V5__create_habit_logs.xml"/>
+    <include file="db/changelog/habit/V6__create_habit_streaks.xml"/>
+
+    <include file="db/changelog/goal/V7__create_goals.xml"/>
+    <include file="db/changelog/goal/V8__create_goal_milestones.xml"/>
+    <include file="db/changelog/goal/V9__create_goal_habits.xml"/>
+
+    <include file="db/changelog/system/V10__create_notification_logs.xml"/>
+    <include file="db/changelog/system/V11__create_processed_events.xml"/>
+
+</databaseChangeLog>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="V2-create-user-profiles" author="zahaand">
+        <createTable tableName="user_profiles">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="uuid">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uq_user_profiles_user_id"/>
+            </column>
+            <column name="display_name" type="varchar(150)"/>
+            <column name="timezone" type="varchar(50)" defaultValue="UTC">
+                <constraints nullable="false"/>
+            </column>
+            <column name="locale" type="varchar(10)" defaultValue="en">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="user_profiles" baseColumnNames="user_id"
+                                 constraintName="fk_user_profiles_user"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <rollback>
+            <dropAllForeignKeyConstraints baseTableName="user_profiles"/>
+            <dropTable tableName="user_profiles"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

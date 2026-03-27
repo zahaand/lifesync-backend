@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="V5-create-habit-logs" author="zahaand">
+        <createTable tableName="habit_logs">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="habit_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="log_date" type="date">
+                <constraints nullable="false"/>
+            </column>
+            <column name="note" type="text"/>
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="timestamptz"/>
+        </createTable>
+        <addUniqueConstraint tableName="habit_logs" columnNames="habit_id, log_date"
+                             constraintName="uq_habit_logs_habit_date"/>
+        <addForeignKeyConstraint baseTableName="habit_logs" baseColumnNames="habit_id"
+                                 constraintName="fk_habit_logs_habit"
+                                 referencedTableName="habits" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="habit_logs" baseColumnNames="user_id"
+                                 constraintName="fk_habit_logs_user"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+        <rollback>
+            <dropAllForeignKeyConstraints baseTableName="habit_logs"/>
+            <dropTable tableName="habit_logs"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

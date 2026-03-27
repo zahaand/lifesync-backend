@@ -100,7 +100,7 @@ curl -s -X POST http://localhost:8080/api/v1/auth/logout \
 |----------|------|
 | OpenAPI YAML | `lifesync-api-spec/src/main/resources/openapi/lifesync-api.yaml` |
 | SecurityConfig | `lifesync-app/src/main/java/.../config/SecurityConfig.java` |
-| JWT Filter | `lifesync-app/src/main/java/.../config/JwtAuthenticationFilter.java` |
+| JWT Filter | `lifesync-web/src/main/java/.../user/JwtAuthenticationFilter.java` |
 | Auth Controller | `lifesync-web/src/main/java/.../user/AuthController.java` |
 | User migrations | `lifesync-infrastructure/src/main/resources/db/changelog/user/` |
 | application.yml | `lifesync-app/src/main/resources/application.yml` |

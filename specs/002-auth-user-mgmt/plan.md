@@ -171,8 +171,8 @@ lifesync-app/
 
 ### D6: JwtAuthenticationFilter Placement
 
-**Decision**: Place `JwtAuthenticationFilter` as `OncePerRequestFilter` in lifesync-app (config package) registered before `UsernamePasswordAuthenticationFilter` in the SecurityConfig filter chain.
-**Rationale**: The filter needs Spring Security context (SecurityContextHolder) and is a framework-level concern. It lives in lifesync-app alongside SecurityConfig, not in lifesync-web.
+**Decision**: Place `JwtAuthenticationFilter` as `OncePerRequestFilter` in lifesync-web (web layer) registered before `UsernamePasswordAuthenticationFilter` in the SecurityConfig filter chain. SecurityConfig (filter chain wiring) remains in lifesync-app.
+**Rationale**: The filter is an HTTP-layer concern (extracts Bearer header, sets MDC) and belongs in lifesync-web per constitution §I. SecurityConfig in lifesync-app wires the filter into the chain as a top-level configuration concern.
 
 ### D7: Banned User Enforcement
 

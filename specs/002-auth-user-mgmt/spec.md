@@ -87,6 +87,7 @@ A developer or tester opens the Swagger UI documentation page, browses all avail
 - What happens when a user tries to register with a username that differs only in letter casing from an existing username? The system treats usernames as case-insensitive for uniqueness validation.
 - What happens when multiple refresh tokens exist for the same user (e.g., logged in from multiple devices)? Each refresh token operates independently — revoking one does not affect others.
 - What happens when an admin tries to ban another admin? The system allows it — admin banning follows the same rules regardless of the target user's role.
+- What happens when two refresh requests arrive simultaneously with the same refresh token? The first request succeeds (rotates the token), and the second request fails with 401 (token already revoked). This is handled naturally by the rotation logic.
 
 ## Requirements *(mandatory)*
 
@@ -163,3 +164,4 @@ A developer or tester opens the Swagger UI documentation page, browses all avail
 - Password strength requirements: minimum 8 characters with at least one uppercase letter, one lowercase letter, and one digit.
 - Registration intentionally returns 409 on duplicate email/username — this is standard UX (user must know the field is taken). Login intentionally does not reveal whether email/username exists — returns generic 401 in both cases. This asymmetry is by design.
 - JwtAuthenticationFilter is placed in lifesync-web (HTTP layer concern). SecurityConfig (filter chain wiring) is placed in lifesync-app. This respects the constitution: web handles HTTP concerns, app handles top-level wiring.
+- Expired and revoked refresh tokens are not cleaned up from the database in this sprint. Cleanup via scheduled job is deferred to Sprint 7 (Observability).

@@ -25,8 +25,8 @@
 
 **Purpose**: Remove single-module scaffolding. No module code yet.
 
-- [ ] T001 Remove existing single-module source directory `src/` and replace root `pom.xml` with parent aggregator POM (packaging: pom, no `<parent>` to spring-boot-starter-parent, import Spring Boot BOM via `<dependencyManagement>` with `scope: import` and `type: pom`, declare all version properties, declare commons-lang3 in dependencyManagement, list 6 `<modules>` in canonical order) in `pom.xml`
-- [ ] T002 Add `.env` to `.gitignore`
+- [x] T001 Remove existing single-module source directory `src/` and replace root `pom.xml` with parent aggregator POM (packaging: pom, no `<parent>` to spring-boot-starter-parent, import Spring Boot BOM via `<dependencyManagement>` with `scope: import` and `type: pom`, declare all version properties, declare commons-lang3 in dependencyManagement, list 6 `<modules>` in canonical order) in `pom.xml`
+- [x] T002 Add `.env` to `.gitignore`
 
 **Checkpoint**: Root pom.xml is a valid aggregator. No child modules exist yet — build will fail (expected).
 
@@ -40,13 +40,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T003 [P] [US1] Create `lifesync-api-spec/pom.xml` with packaging `pom`, parent pointing to root aggregator, no dependencies
-- [ ] T004 [P] [US1] Create `lifesync-domain/pom.xml` with packaging `jar`, parent pointing to root aggregator, zero dependencies; create `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/.gitkeep`
-- [ ] T005 [P] [US1] Create `lifesync-application/pom.xml` with packaging `jar`, parent pointing to root aggregator, dependency on `lifesync-domain`; create `lifesync-application/src/main/java/ru/zahaand/lifesync/application/.gitkeep`
-- [ ] T006 [P] [US1] Create `lifesync-infrastructure/pom.xml` with packaging `jar`, parent pointing to root aggregator, dependencies on `lifesync-domain`, `lifesync-application`, `spring-boot-starter-jooq`, `liquibase-core`, `spring-kafka`, `postgresql` (runtime scope); create `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/.gitkeep`
-- [ ] T007 [P] [US1] Create `lifesync-web/pom.xml` with packaging `jar`, parent pointing to root aggregator, dependencies on `lifesync-application`, `spring-boot-starter-web`, `spring-boot-starter-validation`, `spring-boot-starter-security`; create `lifesync-web/src/main/java/ru/zahaand/lifesync/web/.gitkeep`
-- [ ] T008 [US1] Create `lifesync-app/pom.xml` with packaging `jar`, parent pointing to root aggregator, dependencies on `lifesync-infrastructure`, `lifesync-web`, `spring-boot-starter-actuator`, test-scope dependencies (`spring-boot-starter-test`, `spring-kafka-test`, `spring-security-test`), configure `spring-boot-maven-plugin` with explicit version; move `LifesyncBackendApplication.java` to `lifesync-app/src/main/java/ru/zahaand/lifesync/app/LifesyncBackendApplication.java` and `LifesyncBackendApplicationTests.java` to `lifesync-app/src/test/java/ru/zahaand/lifesync/app/LifesyncBackendApplicationTests.java`
-- [ ] T009 [US1] Verify `./mvnw clean verify` succeeds from project root with all 6 modules compiling in order; verify lifesync-domain pom.xml has zero framework dependencies
+- [x] T003 [P] [US1] Create `lifesync-api-spec/pom.xml` with packaging `pom`, parent pointing to root aggregator, no dependencies
+- [x] T004 [P] [US1] Create `lifesync-domain/pom.xml` with packaging `jar`, parent pointing to root aggregator, zero dependencies; create `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/.gitkeep`
+- [x] T005 [P] [US1] Create `lifesync-application/pom.xml` with packaging `jar`, parent pointing to root aggregator, dependency on `lifesync-domain`; create `lifesync-application/src/main/java/ru/zahaand/lifesync/application/.gitkeep`
+- [x] T006 [P] [US1] Create `lifesync-infrastructure/pom.xml` with packaging `jar`, parent pointing to root aggregator, dependencies on `lifesync-domain`, `lifesync-application`, `spring-boot-starter-jooq`, `liquibase-core`, `spring-kafka`, `postgresql` (runtime scope); create `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/.gitkeep`
+- [x] T007 [P] [US1] Create `lifesync-web/pom.xml` with packaging `jar`, parent pointing to root aggregator, dependencies on `lifesync-application`, `spring-boot-starter-web`, `spring-boot-starter-validation`, `spring-boot-starter-security`; create `lifesync-web/src/main/java/ru/zahaand/lifesync/web/.gitkeep`
+- [x] T008 [US1] Create `lifesync-app/pom.xml` with packaging `jar`, parent pointing to root aggregator, dependencies on `lifesync-infrastructure`, `lifesync-web`, `spring-boot-starter-actuator`, test-scope dependencies (`spring-boot-starter-test`, `spring-kafka-test`, `spring-security-test`), configure `spring-boot-maven-plugin` with explicit version; move `LifesyncBackendApplication.java` to `lifesync-app/src/main/java/ru/zahaand/lifesync/app/LifesyncBackendApplication.java` and `LifesyncBackendApplicationTests.java` to `lifesync-app/src/test/java/ru/zahaand/lifesync/app/LifesyncBackendApplicationTests.java`
+- [x] T009 [US1] Verify `./mvnw clean verify` succeeds from project root with all 6 modules compiling in order; verify lifesync-domain pom.xml has zero framework dependencies
 
 **Checkpoint**: US1 complete. `mvn clean verify` passes. Module dependency boundaries enforced via POMs.
 
@@ -60,9 +60,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T010 [P] [US2] Create `.env.example` at project root with placeholder variables: `POSTGRES_DB=lifesync`, `POSTGRES_USER=lifesync`, `POSTGRES_PASSWORD=lifesync`, `DB_HOST=localhost`, `DB_PORT=5432`, `DB_NAME=lifesync`, `DB_USERNAME=lifesync`, `DB_PASSWORD=lifesync`, `KAFKA_BOOTSTRAP_SERVERS=localhost:9092`
-- [ ] T011 [US2] Create `docker-compose.yml` at project root with 3 services: `postgres` (image `postgres:16`, port 5432, env from `.env` for POSTGRES_DB/USER/PASSWORD, named volume `pgdata`), `zookeeper` (image `confluentinc/cp-zookeeper`, port 2181, ZOOKEEPER_CLIENT_PORT=2181), `kafka` (image `confluentinc/cp-kafka`, port 9092, depends_on zookeeper, KAFKA_BROKER_ID=1, KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181, KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092, KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1)
-- [ ] T012 [US2] Verify `docker compose up -d` starts all 3 services; verify PostgreSQL connection with `docker compose exec postgres psql -U lifesync -d lifesync -c "SELECT 1"`; verify Kafka broker is reachable; verify `.env` is not tracked by git
+- [x] T010 [P] [US2] Create `.env.example` at project root with placeholder variables: `POSTGRES_DB=lifesync`, `POSTGRES_USER=lifesync`, `POSTGRES_PASSWORD=lifesync`, `DB_HOST=localhost`, `DB_PORT=5432`, `DB_NAME=lifesync`, `DB_USERNAME=lifesync`, `DB_PASSWORD=lifesync`, `KAFKA_BOOTSTRAP_SERVERS=localhost:9092`
+- [x] T011 [US2] Create `docker-compose.yml` at project root with 3 services: `postgres` (image `postgres:16`, port 5432, env from `.env` for POSTGRES_DB/USER/PASSWORD, named volume `pgdata`), `zookeeper` (image `confluentinc/cp-zookeeper`, port 2181, ZOOKEEPER_CLIENT_PORT=2181), `kafka` (image `confluentinc/cp-kafka`, port 9092, depends_on zookeeper, KAFKA_BROKER_ID=1, KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181, KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092, KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1)
+- [x] T012 [US2] Verify `docker compose up -d` starts all 3 services; verify PostgreSQL connection with `docker compose exec postgres psql -U lifesync -d lifesync -c "SELECT 1"`; verify Kafka broker is reachable; verify `.env` is not tracked by git
 
 **Checkpoint**: US2 complete. Local backing services start with one command.
 
@@ -76,19 +76,19 @@
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Create Liquibase master changelog at `lifesync-infrastructure/src/main/resources/db/changelog/db.changelog-master.xml` with `<include>` directives for all 11 migration files in order (user/ V1-V3, habit/ V4-V6, goal/ V7-V9, system/ V10-V11)
-- [ ] T014 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/user/V1__create_users.xml` — CREATE TABLE users (id UUID PK DEFAULT gen_random_uuid(), email VARCHAR(255) NN UQ, password_hash VARCHAR(255) NN, username VARCHAR(100) NN UQ, enabled BOOLEAN NN DEFAULT true, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>` with DROP TABLE. No XML comments inside `<changeSet>`.
-- [ ] T015 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/user/V2__create_user_profiles.xml` — CREATE TABLE user_profiles (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN UQ, display_name VARCHAR(150) NULL, timezone VARCHAR(50) NN DEFAULT 'UTC', locale VARCHAR(10) NN DEFAULT 'en', created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now()); include `<rollback>`.
-- [ ] T016 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/user/V3__create_refresh_tokens.xml` — CREATE TABLE refresh_tokens (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN, token_hash VARCHAR(255) NN UQ, expires_at TIMESTAMPTZ NN, revoked BOOLEAN NN DEFAULT false); no audit columns; include `<rollback>`.
-- [ ] T017 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/habit/V4__create_habits.xml` — CREATE TABLE habits (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN, name VARCHAR(200) NN, description TEXT NULL, frequency VARCHAR(20) NN, active BOOLEAN NN DEFAULT true, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>`.
-- [ ] T018 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/habit/V5__create_habit_logs.xml` — CREATE TABLE habit_logs (id UUID PK DEFAULT gen_random_uuid(), habit_id UUID FK→habits(id) NN, user_id UUID FK→users(id) NN, log_date DATE NN, note TEXT NULL, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); UNIQUE(habit_id, log_date); include `<rollback>`.
-- [ ] T019 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/habit/V6__create_habit_streaks.xml` — CREATE TABLE habit_streaks (id UUID PK DEFAULT gen_random_uuid(), habit_id UUID FK→habits(id) NN UQ, current_streak INTEGER NN DEFAULT 0, longest_streak INTEGER NN DEFAULT 0, last_log_date DATE NULL, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now()); include `<rollback>`.
-- [ ] T020 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/goal/V7__create_goals.xml` — CREATE TABLE goals (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN, title VARCHAR(200) NN, description TEXT NULL, target_date DATE NULL, status VARCHAR(20) NN DEFAULT 'ACTIVE', progress INTEGER NN DEFAULT 0, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>`.
-- [ ] T021 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/goal/V8__create_goal_milestones.xml` — CREATE TABLE goal_milestones (id UUID PK DEFAULT gen_random_uuid(), goal_id UUID FK→goals(id) NN, title VARCHAR(200) NN, sort_order INTEGER NN DEFAULT 0, completed BOOLEAN NN DEFAULT false, completed_at TIMESTAMPTZ NULL, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>`.
-- [ ] T022 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/goal/V9__create_goal_habits.xml` — CREATE TABLE goal_habits (id UUID PK DEFAULT gen_random_uuid(), goal_id UUID FK→goals(id) NN, habit_id UUID FK→habits(id) NN, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now()); UNIQUE(goal_id, habit_id); include `<rollback>`.
-- [ ] T023 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/system/V10__create_notification_logs.xml` — CREATE TABLE notification_logs (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN, channel VARCHAR(30) NN, event_type VARCHAR(100) NN, status VARCHAR(20) NN, message TEXT NULL, sent_at TIMESTAMPTZ NULL, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>`.
-- [ ] T024 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/system/V11__create_processed_events.xml` — CREATE TABLE processed_events (id UUID PK DEFAULT gen_random_uuid(), event_id VARCHAR(255) NN UQ, event_type VARCHAR(100) NN, processed_at TIMESTAMPTZ NN DEFAULT now()); no audit columns, no soft delete; include `<rollback>`.
-- [ ] T025 [US3] Verify Liquibase migrations: start application against clean database, confirm all 11 tables created; verify UUID PKs, audit columns on 9 tables, soft-delete on 6 tables; verify each migration rolls back cleanly
+- [x] T013 [US3] Create Liquibase master changelog at `lifesync-infrastructure/src/main/resources/db/changelog/db.changelog-master.xml` with `<include>` directives for all 11 migration files in order (user/ V1-V3, habit/ V4-V6, goal/ V7-V9, system/ V10-V11)
+- [x] T014 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/user/V1__create_users.xml` — CREATE TABLE users (id UUID PK DEFAULT gen_random_uuid(), email VARCHAR(255) NN UQ, password_hash VARCHAR(255) NN, username VARCHAR(100) NN UQ, enabled BOOLEAN NN DEFAULT true, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>` with DROP TABLE. No XML comments inside `<changeSet>`.
+- [x] T015 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/user/V2__create_user_profiles.xml` — CREATE TABLE user_profiles (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN UQ, display_name VARCHAR(150) NULL, timezone VARCHAR(50) NN DEFAULT 'UTC', locale VARCHAR(10) NN DEFAULT 'en', created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now()); include `<rollback>`.
+- [x] T016 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/user/V3__create_refresh_tokens.xml` — CREATE TABLE refresh_tokens (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN, token_hash VARCHAR(255) NN UQ, expires_at TIMESTAMPTZ NN, revoked BOOLEAN NN DEFAULT false); no audit columns; include `<rollback>`.
+- [x] T017 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/habit/V4__create_habits.xml` — CREATE TABLE habits (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN, name VARCHAR(200) NN, description TEXT NULL, frequency VARCHAR(20) NN, active BOOLEAN NN DEFAULT true, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>`.
+- [x] T018 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/habit/V5__create_habit_logs.xml` — CREATE TABLE habit_logs (id UUID PK DEFAULT gen_random_uuid(), habit_id UUID FK→habits(id) NN, user_id UUID FK→users(id) NN, log_date DATE NN, note TEXT NULL, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); UNIQUE(habit_id, log_date); include `<rollback>`.
+- [x] T019 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/habit/V6__create_habit_streaks.xml` — CREATE TABLE habit_streaks (id UUID PK DEFAULT gen_random_uuid(), habit_id UUID FK→habits(id) NN UQ, current_streak INTEGER NN DEFAULT 0, longest_streak INTEGER NN DEFAULT 0, last_log_date DATE NULL, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now()); include `<rollback>`.
+- [x] T020 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/goal/V7__create_goals.xml` — CREATE TABLE goals (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN, title VARCHAR(200) NN, description TEXT NULL, target_date DATE NULL, status VARCHAR(20) NN DEFAULT 'ACTIVE', progress INTEGER NN DEFAULT 0, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>`.
+- [x] T021 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/goal/V8__create_goal_milestones.xml` — CREATE TABLE goal_milestones (id UUID PK DEFAULT gen_random_uuid(), goal_id UUID FK→goals(id) NN, title VARCHAR(200) NN, sort_order INTEGER NN DEFAULT 0, completed BOOLEAN NN DEFAULT false, completed_at TIMESTAMPTZ NULL, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>`.
+- [x] T022 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/goal/V9__create_goal_habits.xml` — CREATE TABLE goal_habits (id UUID PK DEFAULT gen_random_uuid(), goal_id UUID FK→goals(id) NN, habit_id UUID FK→habits(id) NN, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now()); UNIQUE(goal_id, habit_id); include `<rollback>`.
+- [x] T023 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/system/V10__create_notification_logs.xml` — CREATE TABLE notification_logs (id UUID PK DEFAULT gen_random_uuid(), user_id UUID FK→users(id) NN, channel VARCHAR(30) NN, event_type VARCHAR(100) NN, status VARCHAR(20) NN, message TEXT NULL, sent_at TIMESTAMPTZ NULL, created_at TIMESTAMPTZ NN DEFAULT now(), updated_at TIMESTAMPTZ NN DEFAULT now(), deleted_at TIMESTAMPTZ NULL); include `<rollback>`.
+- [x] T024 [P] [US3] Write migration `lifesync-infrastructure/src/main/resources/db/changelog/system/V11__create_processed_events.xml` — CREATE TABLE processed_events (id UUID PK DEFAULT gen_random_uuid(), event_id VARCHAR(255) NN UQ, event_type VARCHAR(100) NN, processed_at TIMESTAMPTZ NN DEFAULT now()); no audit columns, no soft delete; include `<rollback>`.
+- [x] T025 [US3] Verify Liquibase migrations: start application against clean database, confirm all 11 tables created; verify UUID PKs, audit columns on 9 tables, soft-delete on 6 tables; verify each migration rolls back cleanly
 
 **Checkpoint**: US3 complete. All 11 tables created via Liquibase with rollback capability.
 
@@ -102,9 +102,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T026 [US4] Create `lifesync-app/src/main/resources/application.yml` with datasource config (url, username, password via `${ENV_VAR:default}` pattern), Liquibase change-log path (`classpath:db/changelog/db.changelog-master.xml`), Kafka bootstrap-servers, and actuator config (expose health endpoint only, show-details: always)
-- [ ] T027 [US4] Configure permissive Spring Security filter chain in `lifesync-app/src/main/java/ru/zahaand/lifesync/app/config/SecurityConfig.java` — permit all requests (no authentication this sprint); use constructor injection, final fields, explicit constructor, no Lombok, no @Autowired
-- [ ] T028 [US4] Verify application starts with `./mvnw -pl lifesync-app spring-boot:run`; verify `curl http://localhost:8080/actuator/health` returns HTTP 200 with `{"status":"UP"}`; verify health endpoint reflects degraded status when database is stopped
+- [x] T026 [US4] Create `lifesync-app/src/main/resources/application.yml` with datasource config (url, username, password via `${ENV_VAR:default}` pattern), Liquibase change-log path (`classpath:db/changelog/db.changelog-master.xml`), Kafka bootstrap-servers, and actuator config (expose health endpoint only, show-details: always)
+- [x] T027 [US4] Configure permissive Spring Security filter chain in `lifesync-app/src/main/java/ru/zahaand/lifesync/app/config/SecurityConfig.java` — permit all requests (no authentication this sprint); use constructor injection, final fields, explicit constructor, no Lombok, no @Autowired
+- [x] T028 [US4] Verify application starts with `./mvnw -pl lifesync-app spring-boot:run`; verify `curl http://localhost:8080/actuator/health` returns HTTP 200 with `{"status":"UP"}`; verify health endpoint reflects degraded status when database is stopped
 
 **Checkpoint**: US4 complete. Application boots cleanly, health endpoint operational.
 
@@ -118,8 +118,8 @@
 
 ### Implementation for User Story 5
 
-- [ ] T029 [US5] Create `.github/workflows/ci.yml` — trigger on push and pull_request to main; runner ubuntu-latest; steps: `actions/checkout@v4`, `actions/setup-java@v4` (distribution: temurin, java-version: 21, cache: maven), `mvn clean verify --batch-mode --no-transfer-progress`; no Docker services in CI
-- [ ] T030 [US5] Verify CI pipeline: push commit to feature branch, open PR against main, confirm workflow triggers and completes successfully
+- [x] T029 [US5] Create `.github/workflows/ci.yml` — trigger on push and pull_request to main; runner ubuntu-latest; steps: `actions/checkout@v4`, `actions/setup-java@v4` (distribution: temurin, java-version: 21, cache: maven), `mvn clean verify --batch-mode --no-transfer-progress`; no Docker services in CI
+- [x] T030 [US5] Verify CI pipeline: push commit to feature branch, open PR against main, confirm workflow triggers and completes successfully
 
 **Checkpoint**: US5 complete. CI pipeline validates every push and PR.
 
@@ -129,8 +129,8 @@
 
 **Purpose**: Final cleanup affecting multiple user stories.
 
-- [ ] T031 [P] Remove `HELP.md` from project root (generated by Spring Initializr, no longer needed)
-- [ ] T032 Verify full end-to-end flow: `docker compose up -d` → `./mvnw clean verify` → `./mvnw -pl lifesync-app spring-boot:run` → `curl /actuator/health` returns 200 → `docker compose down`
+- [x] T031 [P] Remove `HELP.md` from project root (generated by Spring Initializr, no longer needed)
+- [x] T032 Verify full end-to-end flow: `docker compose up -d` → `./mvnw clean verify` → `./mvnw -pl lifesync-app spring-boot:run` → `curl /actuator/health` returns 200 → `docker compose down`
 
 ---
 

@@ -61,6 +61,21 @@
   Removed sections: none.
   Templates requiring updates: none.
   Follow-up TODOs: none.
+
+  Version change: 1.2.0 → 1.2.1
+  Bump rationale: PATCH — clarification of existing Development Standards
+                  rule 7 (Commits). Standardized to canonical Conventional
+                  Commits types, removed custom db: type, added optional
+                  scope convention per module/domain.
+
+  Modified sections:
+    - Development Standards, rule 7: expanded type list (added style, build),
+      added scope convention, added Russian message format with examples.
+
+  Added sections: none.
+  Removed sections: none.
+  Templates requiring updates: none.
+  Follow-up TODOs: none.
 -->
 
 # LifeSync Backend Constitution
@@ -230,8 +245,20 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
 4. **Utility classes**: `Utils` suffix + private no-arg constructor.
 5. No orphaned code before commit.
 6. **Local run**: `docker compose up -d` + `.env` only.
-7. **Commits**: Conventional Commits.
-   `feat` / `fix` / `refactor` / `test` / `docs` / `chore` / `perf` / `ci`.
+7. **Commits**: Conventional Commits (standard types only).
+   Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`,
+   `perf`, `ci`, `build`.
+   No custom types (e.g. `db:`, `migration:`).
+   Scope is optional, reflects module or domain:
+   `feat(auth):`, `feat(habits):`, `feat(infra):`.
+   For cross-module changes — no scope.
+   Message body: Russian. Format: `<type>(<scope>): <Verb><Object>`.
+   Verbs: Добавить / Реализовать / Исправить / Настроить / Удалить / Обновить.
+   Examples:
+   `feat(infra): Добавить миграции Liquibase для всех 11 таблиц`
+   `feat(auth): Реализовать JWT аутентификацию`
+   `ci: Настроить GitHub Actions pipeline`
+   `fix(habits): Исправить расчёт streak при пропуске дня`
 8. API change = YAML change first. PR without YAML update is PROHIBITED.
 9. Kafka topic/event changes: atomic PR (producers + consumers together).
 10. Kafka consumers: check `processed_events` for idempotency.
@@ -254,4 +281,4 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
 **Compliance**: Claude Code and all reviews MUST verify Core Principles.
 Violations logged in `plan.md` Complexity Tracking with justification.
 
-**Version**: 1.2.0 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27
+**Version**: 1.2.1 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27

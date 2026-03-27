@@ -31,6 +31,36 @@
     - .specify/templates/commands/*.md            ✅ no command files present
 
   Follow-up TODOs: none.
+
+  Version change: 1.1.0 → 1.1.2
+  Bump rationale: PATCH — clarification to existing principle XI
+                  (commit message language standardized to Russian).
+
+  Modified principles:
+    - XI. Code and Documentation Language: added Russian commit message
+      body format with verb list and examples.
+
+  Added sections: none.
+  Removed sections: none.
+  Templates requiring updates: none (no template references commit language).
+  Follow-up TODOs: none.
+
+  Version change: 1.1.1 → 1.2.0
+  Bump rationale: MINOR — new principles added to existing section V
+                  (migration file structure, native XML tags, FK cascade,
+                  index strategy, rollback structure, <sql> usage rule).
+
+  Modified principles:
+    - V. Database Migrations via Liquibase: added migration file structure
+      order, column type conventions, <sql> prohibition/exception rule.
+      Removed old "XML comments in migration files are PROHIBITED." rule,
+      replaced by more precise "XML comments inside <changeSet> blocks
+      are PROHIBITED." at end of new block.
+
+  Added sections: none.
+  Removed sections: none.
+  Templates requiring updates: none.
+  Follow-up TODOs: none.
 -->
 
 # LifeSync Backend Constitution
@@ -76,7 +106,26 @@ All schema changes via Liquibase only. Direct DDL is PROHIBITED.
 Files organised under `db/changelog/{domain}/`.
 Every changeset MUST have a rollback block.
 Applied changesets MUST NOT be modified.
-XML comments inside <changeSet> blocks are PROHIBITED.
+
+Migration file structure MUST follow this order within each `<changeSet>`:
+1. `<createTable>` — table and column definitions
+2. `<addForeignKeyConstraint>` — one block per FK, always with `onDelete="CASCADE"`
+3. `<addUniqueConstraint>` — for composite unique constraints
+4. `<createIndex>` — for every FK column, every column used in WHERE/ORDER BY
+5. `<rollback>` — always last: `<dropAllForeignKeyConstraints>` then `<dropTable>`
+
+Column types:
+- UUID primary keys: `type="uuid" defaultValueComputed="gen_random_uuid()"`
+- Timestamps: `type="timestamptz"`
+- Soft delete: `type="timestamptz"` nullable, no default value
+- Strings: `type="varchar(N)"` or `type="text"`
+
+`<sql>` tag inside `<changeSet>` is PROHIBITED for operations covered by native
+Liquibase tags (CREATE TABLE, ALTER TABLE, ADD CONSTRAINT, CREATE INDEX).
+`<sql>` is PERMITTED ONLY for DDL that has no native Liquibase tag equivalent
+(e.g. CREATE INDEX CONCURRENTLY, custom types, triggers, partitioning).
+
+XML comments inside `<changeSet>` blocks are PROHIBITED.
 
 ### VI. Secrets via Environment Variables
 
@@ -132,6 +181,13 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
 - All code, identifiers, comments, Javadoc: English only.
 - `README.md`: bilingual (English primary, Russian translation).
 - Commit messages: English, Conventional Commits.
+- Commit message body: Russian. Format: `<type>: <Verb><Object>` in Russian.
+  Verbs: Добавить / Реализовать / Исправить / Настроить / Удалить / Обновить.
+  Examples:
+  `feat: Добавить миграции Liquibase для 11 таблиц`
+  `ci: Настроить GitHub Actions pipeline`
+  `chore: Удалить scaffolding Spring Initializr`
+  `fix: Исправить зависимости модуля lifesync-web`
 
 ## Technology Stack
 
@@ -198,4 +254,4 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
 **Compliance**: Claude Code and all reviews MUST verify Core Principles.
 Violations logged in `plan.md` Complexity Tracking with justification.
 
-**Version**: 1.1.0 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27
+**Version**: 1.2.0 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27

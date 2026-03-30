@@ -96,6 +96,9 @@ As a developer, I want the database access layer to use generated type-safe clas
 
 - Q: Should completion log deletion be soft delete or hard delete? → A: Soft delete (set `deleted_at`, exclude from queries, retain data).
 - Q: Can users log completions for inactive (but not deleted) habits? → A: No — completions only allowed for active habits.
+- Q: Are soft-deleted habit logs included in streak calculations? → A: No — soft-deleted logs (deleted_at IS NOT NULL) are excluded from all streak calculations. Streak recalculates as if those logs never existed.
+- Q: What are the PATCH semantics for updating a habit? → A: PATCH /habits/{id} follows JSON Merge Patch semantics (RFC 7396): field present with value → update to that value; field present as null → clear the field (set to null/default); field absent → leave unchanged. Applies to: description, reminderTime, targetDaysOfWeek.
+- Q: What happens to streak when habit frequency is changed? → A: Streak is reset to 0 and recalculated from scratch using the new frequency logic. Historical logs are preserved.
 
 ## Requirements *(mandatory)*
 

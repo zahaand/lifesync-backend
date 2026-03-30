@@ -4,32 +4,20 @@
 package ru.zahaand.lifesync.infrastructure.generated.tables;
 
 
+import org.jooq.*;
+import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
+import org.jooq.impl.TableImpl;
+import ru.zahaand.lifesync.infrastructure.generated.Indexes;
+import ru.zahaand.lifesync.infrastructure.generated.Keys;
+import ru.zahaand.lifesync.infrastructure.generated.Public;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.ProcessedEventsRecord;
+
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-
-import org.jooq.Condition;
-import org.jooq.Field;
-import org.jooq.Name;
-import org.jooq.PlainSQL;
-import org.jooq.QueryPart;
-import org.jooq.SQL;
-import org.jooq.Schema;
-import org.jooq.Select;
-import org.jooq.Stringly;
-import org.jooq.Table;
-import org.jooq.TableField;
-import org.jooq.TableOptions;
-import org.jooq.UniqueKey;
-import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
-import org.jooq.impl.TableImpl;
-
-import ru.zahaand.lifesync.infrastructure.generated.Keys;
-import ru.zahaand.lifesync.infrastructure.generated.Public;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.ProcessedEventsRecord;
 
 
 /**
@@ -73,6 +61,11 @@ public class ProcessedEvents extends TableImpl<ProcessedEventsRecord> {
      */
     public final TableField<ProcessedEventsRecord, OffsetDateTime> PROCESSED_AT = createField(DSL.name("processed_at"), SQLDataType.TIMESTAMPWITHTIMEZONE(6).nullable(false).defaultValue(DSL.field(DSL.raw("now()"), SQLDataType.TIMESTAMPWITHTIMEZONE)), this, "");
 
+    /**
+     * The column <code>public.processed_events.consumer_group</code>.
+     */
+    public final TableField<ProcessedEventsRecord, String> CONSUMER_GROUP = createField(DSL.name("consumer_group"), SQLDataType.VARCHAR(100).nullable(false).defaultValue(DSL.field(DSL.raw("'unknown'::character varying"), SQLDataType.VARCHAR)), this, "");
+
     private ProcessedEvents(Name alias, Table<ProcessedEventsRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -108,13 +101,18 @@ public class ProcessedEvents extends TableImpl<ProcessedEventsRecord> {
     }
 
     @Override
+    public List<Index> getIndexes() {
+        return Arrays.asList(Indexes.IDX_PROCESSED_EVENTS_EVENT_ID_CONSUMER_GROUP);
+    }
+
+    @Override
     public UniqueKey<ProcessedEventsRecord> getPrimaryKey() {
         return Keys.PROCESSED_EVENTS_PKEY;
     }
 
     @Override
     public List<UniqueKey<ProcessedEventsRecord>> getUniqueKeys() {
-        return Arrays.asList(Keys.UQ_PROCESSED_EVENTS_EVENT_ID);
+        return Arrays.asList(Keys.UQ_PROCESSED_EVENTS_EVENT_ID_CONSUMER_GROUP);
     }
 
     @Override

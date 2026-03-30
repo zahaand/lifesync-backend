@@ -4,13 +4,12 @@
 package ru.zahaand.lifesync.infrastructure.generated.tables.records;
 
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
 import org.jooq.Record1;
 import org.jooq.impl.UpdatableRecordImpl;
-
 import ru.zahaand.lifesync.infrastructure.generated.tables.ProcessedEvents;
+
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 
 /**
@@ -77,6 +76,20 @@ public class ProcessedEventsRecord extends UpdatableRecordImpl<ProcessedEventsRe
         return (OffsetDateTime) get(3);
     }
 
+    /**
+     * Setter for <code>public.processed_events.consumer_group</code>.
+     */
+    public void setConsumerGroup(String value) {
+        set(4, value);
+    }
+
+    /**
+     * Getter for <code>public.processed_events.consumer_group</code>.
+     */
+    public String getConsumerGroup() {
+        return (String) get(4);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -100,13 +113,14 @@ public class ProcessedEventsRecord extends UpdatableRecordImpl<ProcessedEventsRe
     /**
      * Create a detached, initialised ProcessedEventsRecord
      */
-    public ProcessedEventsRecord(UUID id, String eventId, String eventType, OffsetDateTime processedAt) {
+    public ProcessedEventsRecord(UUID id, String eventId, String eventType, OffsetDateTime processedAt, String consumerGroup) {
         super(ProcessedEvents.PROCESSED_EVENTS);
 
         setId(id);
         setEventId(eventId);
         setEventType(eventType);
         setProcessedAt(processedAt);
+        setConsumerGroup(consumerGroup);
         resetChangedOnNotNull();
     }
 }

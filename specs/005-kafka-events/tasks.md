@@ -7,7 +7,7 @@
 
 ## Phase 0: Database Migration & Domain Events (7 tasks)
 
-- [ ] T001 — Create V17 migration: add `consumer_group` column to `processed_events`
+- [x] T001 — Create V17 migration: add `consumer_group` column to `processed_events`
   - File: `lifesync-infrastructure/src/main/resources/db/changelog/system/V17__add_consumer_group_to_processed_events.xml`
   - `<addColumn>` — `consumer_group varchar(100) NOT NULL DEFAULT 'unknown'`
   - `<dropUniqueConstraint>` — remove `uq_processed_events_event_id`
@@ -17,18 +17,18 @@
   - Validates: CHK002, CHK003, CHK059
   - Ref: Plan §0.1, Spec §FR-008/FR-009
 
-- [ ] T002 — Register V17 in changelog master
+- [x] T002 — Register V17 in changelog master
   - File: `lifesync-infrastructure/src/main/resources/db/changelog/db.changelog-master.xml`
   - Add `<include file="db/changelog/system/V17__add_consumer_group_to_processed_events.xml"/>`
   - Validates: CHK060
   - Depends: T001
 
-- [ ] T003 — Regenerate jOOQ classes after V17
+- [x] T003 — Regenerate jOOQ classes after V17
   - Command: `mvn generate-sources -pl lifesync-infrastructure -Pjooq-codegen`
   - Verify `PROCESSED_EVENTS.CONSUMER_GROUP` field exists in generated code
   - Depends: T002
 
-- [ ] T004 [P] — Create `DomainEvent` sealed interface
+- [x] T004 [P] — Create `DomainEvent` sealed interface
   - File: `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/event/DomainEvent.java`
   - Sealed interface permitting `HabitCompletedEvent`, `GoalProgressUpdatedEvent`
   - Methods: `String eventId()`, `Instant occurredAt()`
@@ -36,7 +36,7 @@
   - Validates: CHK054
   - Ref: Plan §0.2
 
-- [ ] T005 [P] — Create `HabitCompletedEvent` record
+- [x] T005 [P] — Create `HabitCompletedEvent` record
   - File: `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/event/HabitCompletedEvent.java`
   - Fields: `String eventId, UUID habitId, UUID userId, LocalDate logDate, UUID completionId, Instant occurredAt`
   - Implements `DomainEvent`
@@ -44,7 +44,7 @@
   - Validates: CHK009, CHK054
   - Ref: Plan §0.2, Spec §FR-002
 
-- [ ] T006 [P] — Create `GoalProgressUpdatedEvent` stub record
+- [x] T006 [P] — Create `GoalProgressUpdatedEvent` stub record
   - File: `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/event/GoalProgressUpdatedEvent.java`
   - Fields: `String eventId, UUID goalId, UUID userId, UUID habitId, int progressPercentage, Instant occurredAt`
   - Implements `DomainEvent`
@@ -52,7 +52,7 @@
   - Validates: CHK054, CHK069
   - Ref: Plan §0.2, Spec §FR-013
 
-- [ ] T007 [P] — Create `TelegramNotificationSender` domain port interface
+- [x] T007 [P] — Create `TelegramNotificationSender` domain port interface
   - File: `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/user/TelegramNotificationSender.java`
     - Method: `void send(String chatId, String message)`
     - NO TelegramBots types in signature

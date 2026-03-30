@@ -10,6 +10,12 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
+jwt:
+  private-key: ${JWT_PRIVATE_KEY}
+  public-key: ${JWT_PUBLIC_KEY}
+  access-token-expiry: ${JWT_ACCESS_TOKEN_EXPIRY:900}
+  refresh-token-expiry: ${JWT_REFRESH_TOKEN_EXPIRY:604800}
+
 management:
   endpoints:
     web:

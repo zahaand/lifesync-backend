@@ -66,7 +66,7 @@
 
 ## Phase 1: Kafka Infrastructure & Configuration (8 tasks)
 
-- [ ] T008 — Create `KafkaTopicConfig` with topic beans
+- [x] T008 — Create `KafkaTopicConfig` with topic beans
   - File: `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/event/config/KafkaTopicConfig.java`
   - Topics via `TopicBuilder`:
     - `habit.log.completed` — 3 partitions, replication factor 1
@@ -77,7 +77,7 @@
   - Validates: CHK020, CHK070
   - Ref: Plan §1.1, Spec §FR-010/FR-014
 
-- [ ] T009 — Create `KafkaConsumerConfig` with retry and DLQ
+- [x] T009 — Create `KafkaConsumerConfig` with retry and DLQ
   - File: `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/event/config/KafkaConsumerConfig.java`
   - `ConcurrentKafkaListenerContainerFactory` bean
   - `DefaultErrorHandler` with `ExponentialBackOff(1000, 2.0)` maxAttempts=4 (1 original + 3 retries at intervals: 1s, 2s, 4s)
@@ -88,7 +88,7 @@
   - Validates: CHK016, CHK017, CHK018, CHK019, CHK021
   - Ref: Plan §1.2, Spec §FR-011/FR-012/FR-015
 
-- [ ] T010 — Update `application.yml` with Kafka and Telegram config
+- [x] T010 — Update `application.yml` with Kafka and Telegram config
   - File: `lifesync-app/src/main/resources/application.yml`
   - Add under `spring.kafka`:
     - `producer.key-serializer: StringSerializer`
@@ -102,7 +102,7 @@
   - Add `lifesync.telegram.bot-username: ${TELEGRAM_BOT_USERNAME:}`
   - Ref: Plan §1.2
 
-- [ ] T011 — Update `.env.example` with Telegram environment variables
+- [x] T011 — Update `.env.example` with Telegram environment variables
   - File: `.env.example`
   - Add:
     - `TELEGRAM_ENABLED=false`
@@ -111,7 +111,7 @@
   - Validates: CHK046
   - Ref: Constitution §VI
 
-- [ ] T012 — Create `KafkaHabitEventPublisher`
+- [x] T012 — Create `KafkaHabitEventPublisher`
   - File: `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/event/KafkaHabitEventPublisher.java`
   - `@Component` class — does NOT implement any domain port (use cases publish via `ApplicationEventPublisher` directly)
   - Listens with `@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)` with parameter type `HabitCompletedEvent` directly (Spring's `ApplicationEventPublisher.publishEvent()` supports arbitrary objects since Spring 4.2 — no `ApplicationEvent` wrapper class needed)
@@ -123,7 +123,7 @@
   - Validates: CHK010, CHK011, CHK032, CHK057
   - Ref: Plan §1.3, Spec §FR-001/FR-003
 
-- [ ] T013 — Create `ProcessedEventRepository`
+- [x] T013 — Create `ProcessedEventRepository`
   - File: `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/event/ProcessedEventRepository.java`
   - Uses jOOQ generated `PROCESSED_EVENTS` table
   - `boolean existsByEventIdAndConsumerGroup(String eventId, String consumerGroup)` — idempotency check
@@ -134,14 +134,14 @@
   - Depends: T003
   - Ref: Plan §1.4
 
-- [ ] T014 [P] — Add TelegramBots dependency to infrastructure pom.xml
+- [x] T014 [P] — Add TelegramBots dependency to infrastructure pom.xml
   - File: `lifesync-infrastructure/pom.xml`
   - Add `org.telegram:telegrambots` (check latest version compatible with Spring Boot 3.5.x)
   - Scoped to `lifesync-infrastructure` only — not in domain or application
   - Validates: CHK047
   - Ref: Plan §4.2
 
-- [ ] T015 [P] — Update test `application.yml` with Kafka consumer config
+- [x] T015 [P] — Update test `application.yml` with Kafka consumer config
   - File: `lifesync-web/src/test/resources/application.yml`
   - Mirror main `application.yml` Kafka serialization and trusted packages config
   - Set `lifesync.telegram.enabled: false` for tests

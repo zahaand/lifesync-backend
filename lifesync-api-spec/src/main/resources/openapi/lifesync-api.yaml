@@ -6,6 +6,9 @@ info:
   contact:
     name: zahaand
 
+servers:
+  - url: /api/v1
+
 security: []
 
 tags:
@@ -19,7 +22,7 @@ tags:
     description: Habit tracking, completion logs, and streaks (authenticated)
 
 paths:
-  /auth/register:
+  /api/v1/auth/register:
     post:
       tags: [Auth]
       operationId: register
@@ -51,7 +54,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /auth/login:
+  /api/v1/auth/login:
     post:
       tags: [Auth]
       operationId: login
@@ -83,7 +86,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /auth/refresh:
+  /api/v1/auth/refresh:
     post:
       tags: [Auth]
       operationId: refreshToken
@@ -109,7 +112,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /auth/logout:
+  /api/v1/auth/logout:
     post:
       tags: [Auth]
       operationId: logout
@@ -131,7 +134,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /users/me:
+  /api/v1/users/me:
     get:
       tags: [User]
       operationId: getMyProfile
@@ -201,7 +204,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /users/me/telegram:
+  /api/v1/users/me/telegram:
     put:
       tags: [User]
       operationId: connectTelegram
@@ -235,7 +238,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /admin/users:
+  /api/v1/admin/users:
     get:
       tags: [Admin]
       operationId: listUsers
@@ -294,7 +297,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /admin/users/{id}:
+  /api/v1/admin/users/{id}:
     get:
       tags: [Admin]
       operationId: getUserById
@@ -335,7 +338,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /admin/users/{id}/ban:
+  /api/v1/admin/users/{id}/ban:
     post:
       tags: [Admin]
       operationId: banUser
@@ -376,7 +379,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /habits:
+  /api/v1/habits:
     get:
       tags: [Habit]
       operationId: getHabits
@@ -456,7 +459,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /habits/{id}:
+  /api/v1/habits/{id}:
     get:
       tags: [Habit]
       operationId: getHabit
@@ -567,7 +570,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /habits/{id}/complete:
+  /api/v1/habits/{id}/complete:
     post:
       tags: [Habit]
       operationId: completeHabit
@@ -620,7 +623,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /habits/{id}/complete/{logId}:
+  /api/v1/habits/{id}/complete/{logId}:
     delete:
       tags: [Habit]
       operationId: deleteHabitLog
@@ -657,7 +660,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /habits/{id}/logs:
+  /api/v1/habits/{id}/logs:
     get:
       tags: [Habit]
       operationId: getHabitLogs
@@ -709,7 +712,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
-  /habits/{id}/streak:
+  /api/v1/habits/{id}/streak:
     get:
       tags: [Habit]
       operationId: getHabitStreak

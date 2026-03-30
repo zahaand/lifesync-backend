@@ -9,6 +9,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.zahaand.lifesync.api.model.ErrorResponseDto;
+import ru.zahaand.lifesync.domain.habit.exception.DuplicateHabitLogException;
+import ru.zahaand.lifesync.domain.habit.exception.HabitInactiveException;
+import ru.zahaand.lifesync.domain.habit.exception.HabitNotFoundException;
 import ru.zahaand.lifesync.domain.user.exception.DuplicateEmailException;
 import ru.zahaand.lifesync.domain.user.exception.DuplicateUsernameException;
 import ru.zahaand.lifesync.domain.user.exception.InvalidCredentialsException;
@@ -30,6 +33,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleUserNotFound(UserNotFoundException ex,
                                                                HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(HabitNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleHabitNotFound(HabitNotFoundException ex,
+                                                                HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(HabitInactiveException.class)
+    public ResponseEntity<ErrorResponseDto> handleHabitInactive(HabitInactiveException ex,
+                                                                HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DuplicateHabitLogException.class)
+    public ResponseEntity<ErrorResponseDto> handleDuplicateHabitLog(DuplicateHabitLogException ex,
+                                                                    HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(UserDeletedException.class)

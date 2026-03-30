@@ -8,30 +8,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.zahaand.lifesync.domain.habit.Frequency;
-import ru.zahaand.lifesync.domain.habit.Habit;
-import ru.zahaand.lifesync.domain.habit.HabitId;
-import ru.zahaand.lifesync.domain.habit.HabitLog;
-import ru.zahaand.lifesync.domain.habit.HabitLogId;
-import ru.zahaand.lifesync.domain.habit.HabitLogRepository;
-import ru.zahaand.lifesync.domain.habit.HabitRepository;
-import ru.zahaand.lifesync.domain.habit.HabitStreak;
-import ru.zahaand.lifesync.domain.habit.HabitStreakRepository;
+import org.springframework.context.ApplicationEventPublisher;
+import ru.zahaand.lifesync.domain.event.HabitCompletedEvent;
+import ru.zahaand.lifesync.domain.habit.*;
 import ru.zahaand.lifesync.domain.habit.exception.HabitNotFoundException;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DeleteHabitLogUseCaseTest {
@@ -41,9 +32,7 @@ class DeleteHabitLogUseCaseTest {
     @Mock
     private HabitLogRepository habitLogRepository;
     @Mock
-    private HabitStreakRepository habitStreakRepository;
-    @Mock
-    private StreakCalculatorService streakCalculatorService;
+    private ApplicationEventPublisher eventPublisher;
 
     private DeleteHabitLogUseCase useCase;
     private static final UUID USER_ID = UUID.randomUUID();
@@ -56,15 +45,15 @@ class DeleteHabitLogUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new DeleteHabitLogUseCase(habitRepository, habitLogRepository,
-                habitStreakRepository, streakCalculatorService, CLOCK);
+                eventPublisher, CLOCK);
     }
 
     @Nested
     class Execute {
 
         @Test
-        @DisplayName("Should soft-delete habit log and recalculate streak")
-        void shouldDeleteLogAndRecalculateStreak() {
+        @DisplayName("Should soft-delete habit log and publish HabitCompletedEvent")
+        void shouldDeleteLogAndPublishEvent() {
             Habit habit = new Habit(HABIT_ID, USER_ID, "Test", null, Frequency.DAILY,
                     null, null, true, Instant.now(), Instant.now(), null);
             HabitLog log = new HabitLog(LOG_ID, HABIT_ID, USER_ID, LocalDate.of(2026, 3, 29),
@@ -73,19 +62,22 @@ class DeleteHabitLogUseCaseTest {
             when(habitRepository.findByIdAndUserId(HABIT_ID, USER_ID)).thenReturn(Optional.of(habit));
             when(habitLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).thenReturn(Optional.of(log));
             when(habitLogRepository.update(any(HabitLog.class))).thenAnswer(i -> i.getArgument(0));
-            when(habitLogRepository.findLogDatesDesc(HABIT_ID, USER_ID)).thenReturn(Collections.emptyList());
-            when(streakCalculatorService.calculate(any(), any(), any(), any()))
-                    .thenReturn(new HabitStreak(HABIT_ID, 0, 0, null));
-            when(habitStreakRepository.findByHabitIdAndUserId(HABIT_ID, USER_ID))
-                    .thenReturn(Optional.of(new HabitStreak(HABIT_ID, 1, 1, LocalDate.of(2026, 3, 29))));
 
             useCase.execute(HABIT_ID, LOG_ID, USER_ID);
 
-            ArgumentCaptor<HabitLog> captor = ArgumentCaptor.forClass(HabitLog.class);
-            verify(habitLogRepository).update(captor.capture());
-            assertNotNull(captor.getValue().getDeletedAt());
+            ArgumentCaptor<HabitLog> logCaptor = ArgumentCaptor.forClass(HabitLog.class);
+            verify(habitLogRepository).update(logCaptor.capture());
+            assertNotNull(logCaptor.getValue().getDeletedAt());
 
-            verify(habitStreakRepository).update(any(HabitStreak.class));
+            ArgumentCaptor<HabitCompletedEvent> eventCaptor = ArgumentCaptor.forClass(HabitCompletedEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            HabitCompletedEvent event = eventCaptor.getValue();
+            assertEquals(HABIT_ID.value(), event.habitId());
+            assertEquals(USER_ID, event.userId());
+            assertEquals(LocalDate.of(2026, 3, 29), event.logDate());
+            assertEquals(LOG_ID.value(), event.completionId());
+            assertNotNull(event.eventId());
+            assertNotNull(event.occurredAt());
         }
 
         @Test
@@ -106,6 +98,24 @@ class DeleteHabitLogUseCaseTest {
             when(habitLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).thenReturn(Optional.empty());
 
             assertThrows(HabitNotFoundException.class,
+                    () -> useCase.execute(HABIT_ID, LOG_ID, USER_ID));
+        }
+
+        @Test
+        @DisplayName("Should propagate exception when publishEvent throws")
+        void shouldPropagateWhenPublishEventThrows() {
+            Habit habit = new Habit(HABIT_ID, USER_ID, "Test", null, Frequency.DAILY,
+                    null, null, true, Instant.now(), Instant.now(), null);
+            HabitLog log = new HabitLog(LOG_ID, HABIT_ID, USER_ID, LocalDate.of(2026, 3, 29),
+                    null, Instant.now(), Instant.now(), null);
+
+            when(habitRepository.findByIdAndUserId(HABIT_ID, USER_ID)).thenReturn(Optional.of(habit));
+            when(habitLogRepository.findByIdAndUserId(LOG_ID, USER_ID)).thenReturn(Optional.of(log));
+            when(habitLogRepository.update(any(HabitLog.class))).thenAnswer(i -> i.getArgument(0));
+            doThrow(new RuntimeException("Event bus failure"))
+                    .when(eventPublisher).publishEvent(any(HabitCompletedEvent.class));
+
+            assertThrows(RuntimeException.class,
                     () -> useCase.execute(HABIT_ID, LOG_ID, USER_ID));
         }
     }

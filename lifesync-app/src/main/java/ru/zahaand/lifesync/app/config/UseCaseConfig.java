@@ -1,29 +1,11 @@
 package ru.zahaand.lifesync.app.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.zahaand.lifesync.application.habit.CompleteHabitUseCase;
-import ru.zahaand.lifesync.application.habit.CreateHabitUseCase;
-import ru.zahaand.lifesync.application.habit.DeleteHabitLogUseCase;
-import ru.zahaand.lifesync.application.habit.DeleteHabitUseCase;
-import ru.zahaand.lifesync.application.habit.GetHabitLogsUseCase;
-import ru.zahaand.lifesync.application.habit.GetHabitStreakUseCase;
-import ru.zahaand.lifesync.application.habit.GetHabitUseCase;
-import ru.zahaand.lifesync.application.habit.GetHabitsUseCase;
-import ru.zahaand.lifesync.application.habit.StreakCalculatorService;
-import ru.zahaand.lifesync.application.habit.UpdateHabitUseCase;
-import ru.zahaand.lifesync.application.user.BanUserUseCase;
-import ru.zahaand.lifesync.application.user.ConnectTelegramUseCase;
-import ru.zahaand.lifesync.application.user.DeleteUserUseCase;
-import ru.zahaand.lifesync.application.user.GetAdminUserUseCase;
-import ru.zahaand.lifesync.application.user.GetAdminUsersUseCase;
-import ru.zahaand.lifesync.application.user.GetUserProfileUseCase;
-import ru.zahaand.lifesync.application.user.LoginUserUseCase;
-import ru.zahaand.lifesync.application.user.LogoutUserUseCase;
-import ru.zahaand.lifesync.application.user.RefreshTokenUseCase;
-import ru.zahaand.lifesync.application.user.RegisterUserUseCase;
-import ru.zahaand.lifesync.application.user.UpdateUserProfileUseCase;
+import ru.zahaand.lifesync.application.habit.*;
+import ru.zahaand.lifesync.application.user.*;
 import ru.zahaand.lifesync.domain.habit.HabitLogRepository;
 import ru.zahaand.lifesync.domain.habit.HabitRepository;
 import ru.zahaand.lifesync.domain.habit.HabitStreakRepository;
@@ -154,21 +136,19 @@ public class UseCaseConfig {
     @Bean
     public CompleteHabitUseCase completeHabitUseCase(HabitRepository habitRepository,
                                                       HabitLogRepository habitLogRepository,
-                                                      HabitStreakRepository habitStreakRepository,
-                                                      StreakCalculatorService streakCalculatorService,
+                                                      ApplicationEventPublisher eventPublisher,
                                                       Clock clock) {
         return new CompleteHabitUseCase(habitRepository, habitLogRepository,
-                habitStreakRepository, streakCalculatorService, clock);
+                eventPublisher, clock);
     }
 
     @Bean
     public DeleteHabitLogUseCase deleteHabitLogUseCase(HabitRepository habitRepository,
                                                         HabitLogRepository habitLogRepository,
-                                                        HabitStreakRepository habitStreakRepository,
-                                                        StreakCalculatorService streakCalculatorService,
+                                                        ApplicationEventPublisher eventPublisher,
                                                         Clock clock) {
         return new DeleteHabitLogUseCase(habitRepository, habitLogRepository,
-                habitStreakRepository, streakCalculatorService, clock);
+                eventPublisher, clock);
     }
 
     @Bean

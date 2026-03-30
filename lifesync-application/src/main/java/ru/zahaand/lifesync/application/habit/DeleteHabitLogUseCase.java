@@ -2,22 +2,14 @@ package ru.zahaand.lifesync.application.habit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
-import ru.zahaand.lifesync.domain.habit.Habit;
-import ru.zahaand.lifesync.domain.habit.HabitId;
-import ru.zahaand.lifesync.domain.habit.HabitLog;
-import ru.zahaand.lifesync.domain.habit.HabitLogId;
-import ru.zahaand.lifesync.domain.habit.HabitLogRepository;
-import ru.zahaand.lifesync.domain.habit.HabitRepository;
-import ru.zahaand.lifesync.domain.habit.HabitStreak;
-import ru.zahaand.lifesync.domain.habit.HabitStreakRepository;
+import ru.zahaand.lifesync.domain.event.HabitCompletedEvent;
+import ru.zahaand.lifesync.domain.habit.*;
 import ru.zahaand.lifesync.domain.habit.exception.HabitNotFoundException;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public class DeleteHabitLogUseCase {
@@ -26,19 +18,16 @@ public class DeleteHabitLogUseCase {
 
     private final HabitRepository habitRepository;
     private final HabitLogRepository habitLogRepository;
-    private final HabitStreakRepository habitStreakRepository;
-    private final StreakCalculatorService streakCalculatorService;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     public DeleteHabitLogUseCase(HabitRepository habitRepository,
                                   HabitLogRepository habitLogRepository,
-                                  HabitStreakRepository habitStreakRepository,
-                                  StreakCalculatorService streakCalculatorService,
+                                  ApplicationEventPublisher eventPublisher,
                                   Clock clock) {
         this.habitRepository = habitRepository;
         this.habitLogRepository = habitLogRepository;
-        this.habitStreakRepository = habitStreakRepository;
-        this.streakCalculatorService = streakCalculatorService;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
     }
 
@@ -56,21 +45,16 @@ public class DeleteHabitLogUseCase {
         HabitLog deleted = habitLog.softDelete(now);
         habitLogRepository.update(deleted);
 
-        recalculateStreak(habitId, userId, habit);
+        HabitCompletedEvent event = new HabitCompletedEvent(
+                UUID.randomUUID().toString(),
+                habitId.value(),
+                userId,
+                habitLog.getLogDate(),
+                logId.value(),
+                now
+        );
+        eventPublisher.publishEvent(event);
 
         log.info("Habit log deleted: logId={}, habitId={}", logId.value(), habitId.value());
-    }
-
-    private void recalculateStreak(HabitId habitId, UUID userId, Habit habit) {
-        List<LocalDate> logDates = habitLogRepository.findLogDatesDesc(habitId, userId);
-        HabitStreak newStreak = streakCalculatorService.calculate(
-                habitId, habit.getFrequency(), habit.getTargetDaysOfWeek(), logDates);
-
-        Optional<HabitStreak> existing = habitStreakRepository.findByHabitIdAndUserId(habitId, userId);
-        if (existing.isPresent()) {
-            habitStreakRepository.update(newStreak);
-        } else {
-            habitStreakRepository.save(newStreak);
-        }
     }
 }

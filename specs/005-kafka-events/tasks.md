@@ -153,7 +153,7 @@
 
 ## Phase 2: Use Case Refactor (5 tasks)
 
-- [ ] T016 — Refactor `CompleteHabitUseCase`: remove sync streak, add event publishing
+- [x] T016 — Refactor `CompleteHabitUseCase`: remove sync streak, add event publishing
   - File: `lifesync-application/src/main/java/ru/zahaand/lifesync/application/habit/CompleteHabitUseCase.java`
   - Remove constructor params: `HabitStreakRepository`, `StreakCalculatorService`
   - Remove `recalculateStreak()` private method entirely
@@ -165,7 +165,7 @@
   - Depends: T004, T005, T007
   - Ref: Plan §2.1, Spec §FR-003/FR-004
 
-- [ ] T017 — Refactor `DeleteHabitLogUseCase`: remove sync streak, add event publishing
+- [x] T017 — Refactor `DeleteHabitLogUseCase`: remove sync streak, add event publishing
   - File: `lifesync-application/src/main/java/ru/zahaand/lifesync/application/habit/DeleteHabitLogUseCase.java`
   - Same pattern as T016: remove `HabitStreakRepository`, `StreakCalculatorService`, `recalculateStreak()`
   - Add `ApplicationEventPublisher`, publish `HabitCompletedEvent` after soft-delete
@@ -175,7 +175,7 @@
   - Depends: T004, T005, T007
   - Ref: Plan §2.2
 
-- [ ] T018 — Update `UseCaseConfig` and `TestUseCaseConfig` bean wiring
+- [x] T018 — Update `UseCaseConfig` and `TestUseCaseConfig` bean wiring
   - File: `lifesync-app/src/main/java/ru/zahaand/lifesync/app/config/UseCaseConfig.java`
   - `completeHabitUseCase` bean: replace `HabitStreakRepository` + `StreakCalculatorService` with `ApplicationEventPublisher`
   - `deleteHabitLogUseCase` bean: same replacement
@@ -186,7 +186,7 @@
   - Depends: T016, T017
   - Ref: Plan §2.3
 
-- [ ] T019 — Update `CompleteHabitUseCaseTest`
+- [x] T019 — Update `CompleteHabitUseCaseTest`
   - File: `lifesync-application/src/test/java/ru/zahaand/lifesync/application/habit/CompleteHabitUseCaseTest.java`
   - Remove all streak recalculation assertions and mocks
   - Add mock `ApplicationEventPublisher`
@@ -197,7 +197,7 @@
   - Depends: T016
   - Ref: Plan §6.1
 
-- [ ] T020 — Update `DeleteHabitLogUseCaseTest`
+- [x] T020 — Update `DeleteHabitLogUseCaseTest`
   - File: `lifesync-application/src/test/java/ru/zahaand/lifesync/application/habit/DeleteHabitLogUseCaseTest.java`
   - Same pattern as T019: remove streak mocks, add event publishing verification
   - `@ExtendWith(MockitoExtension.class)`, `@DisplayName` first, `@Nested` per method

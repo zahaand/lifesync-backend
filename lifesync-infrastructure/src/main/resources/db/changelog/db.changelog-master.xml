@@ -20,4 +20,8 @@
     <include file="db/changelog/system/V10__create_notification_logs.xml"/>
     <include file="db/changelog/system/V11__create_processed_events.xml"/>
 
+    <include file="db/changelog/user/V12__add_role_to_users.xml"/>
+    <include file="db/changelog/user/V13__add_telegram_to_profiles.xml"/>
+    <include file="db/changelog/user/V14__add_username_case_insensitive_index.xml"/>
+
 </databaseChangeLog>

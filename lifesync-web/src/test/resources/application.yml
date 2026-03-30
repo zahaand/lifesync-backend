@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: lifesync-backend-test
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lifesync_test
+    username: test
+    password: test
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  kafka:
+    bootstrap-servers: localhost:9092
+
+jwt:
+  private-key: ${JWT_PRIVATE_KEY:}
+  public-key: ${JWT_PUBLIC_KEY:}
+  access-token-expiry: 900
+  refresh-token-expiry: 604800
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

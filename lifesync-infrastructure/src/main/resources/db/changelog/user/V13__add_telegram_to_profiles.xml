@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="V13-add-telegram-to-profiles" author="zahaand">
+        <addColumn tableName="user_profiles">
+            <column name="telegram_chat_id" type="varchar(50)"/>
+        </addColumn>
+        <rollback>
+            <dropColumn tableName="user_profiles" columnName="telegram_chat_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

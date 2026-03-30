@@ -35,5 +35,12 @@ build/
 ### Environment ###
 .env
 
+### JWT keys ###
+**/certs/private.pem
+**/certs/public.pem
+
+### Dev config ###
+application-dev.yml
+
 ### Claude Code ###
 .claude/

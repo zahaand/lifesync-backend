@@ -16,6 +16,13 @@ jwt:
   access-token-expiry: ${JWT_ACCESS_TOKEN_EXPIRY:900}
   refresh-token-expiry: ${JWT_REFRESH_TOKEN_EXPIRY:604800}
 
+springdoc:
+  swagger-ui:
+    url: /lifesync-api.yaml
+    config-url: /v3/api-docs/swagger-config
+  api-docs:
+    enabled: true
+
 management:
   endpoints:
     web:

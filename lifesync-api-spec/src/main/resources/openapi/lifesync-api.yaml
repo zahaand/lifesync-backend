@@ -1,13 +1,21 @@
 openapi: 3.1.0
 info:
   title: LifeSync API
-  description: LifeSync Backend — habit and goal tracking platform
+  description: |
+    LifeSync Backend — habit and goal tracking platform.
+
+    ## How to use this API
+    1. **Register:** `POST /api/v1/auth/register` — create an account
+    2. **Login:** `POST /api/v1/auth/login` — copy the `accessToken` from the response
+    3. **Authorize:** click the **Authorize** button (top right of this page), paste the `accessToken`
+    4. All authenticated endpoints will use your token automatically
+    5. When the token expires (15 min): use `POST /api/v1/auth/refresh` with your `refreshToken` to get a new pair
   version: 0.1.0
   contact:
     name: zahaand
 
 servers:
-  - url: /api/v1
+  - url: /
 
 security: []
 
@@ -27,28 +35,58 @@ paths:
       tags: [Auth]
       operationId: register
       summary: Register a new user
-      description: Creates a new user account with email, username, and password.
+      description: |
+        Creates a new user account with email, username, and password.
+
+        **Password requirements:** minimum 8 characters.
+
+        **Username rules:** lowercase letters, digits, underscores, and hyphens only (`^[a-z0-9_-]+$`), 3–32 characters.
+
+        **Email:** must be a valid email address, maximum 255 characters. Must be unique across all accounts.
+
+        After successful registration, the account is created but you are **not** logged in.
+        Use `POST /api/v1/auth/login` with your credentials to obtain access and refresh tokens.
+
+        **How to test:**
+        1. Send a POST request with email, username, and password
+        2. Verify 201 response with user details
+        3. Try registering again with the same email — expect 409
+        4. Try registering with a password shorter than 8 chars — expect 400
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/RegisterRequestDto'
+            examples:
+              standard:
+                summary: Standard registration
+                value:
+                  email: alice@example.com
+                  username: alice-dev
+                  password: MySecure8+
       responses:
         '201':
-          description: User registered successfully
+          description: User registered successfully. Use `/auth/login` to obtain tokens.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserResponseDto'
         '400':
-          description: Validation error
+          description: |
+            Validation error. Possible reasons:
+            - Password shorter than 8 characters
+            - Username shorter than 3 or longer than 32 characters
+            - Username contains invalid characters (only `a-z`, `0-9`, `_`, `-` allowed)
+            - Email format is invalid
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '409':
-          description: Email or username already taken
+          description: |
+            Conflict. Email or username is already registered by another account.
+            Try a different email or username.
           content:
             application/json:
               schema:
@@ -59,28 +97,58 @@ paths:
       tags: [Auth]
       operationId: login
       summary: Log in with credentials
-      description: Authenticates with email or username + password. Returns access and refresh tokens.
+      description: |
+        Authenticates a user with their credentials and returns a token pair.
+
+        The `identifier` field accepts **either** an email address or a username — the server
+        determines which one was provided automatically.
+
+        On success, the response contains:
+        - `accessToken` — a short-lived JWT (RS256) valid for **15 minutes** (900 seconds). Include it in the `Authorization: Bearer <token>` header for all authenticated requests.
+        - `refreshToken` — an opaque token valid for **7 days**. Use it with `POST /auth/refresh` to get a new token pair when the access token expires.
+
+        **How to test:**
+        1. Register an account first via `POST /auth/register`
+        2. Send a login request with your email or username + password
+        3. Copy the `accessToken` and click **Authorize** (top right) to paste it
+        4. All authenticated endpoints will now work
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginRequestDto'
+            examples:
+              loginWithEmail:
+                summary: Login with email
+                value:
+                  identifier: alice@example.com
+                  password: MySecure8+
+              loginWithUsername:
+                summary: Login with username
+                value:
+                  identifier: alice-dev
+                  password: MySecure8+
       responses:
         '200':
-          description: Login successful
+          description: Login successful. Save both tokens — you will need the refreshToken later.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenResponseDto'
         '401':
-          description: Invalid credentials
+          description: |
+            Invalid credentials. Either the identifier (email/username) does not exist
+            or the password is incorrect. The error message is intentionally vague to
+            prevent user enumeration.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '403':
-          description: Account banned or disabled
+          description: |
+            Account is banned or disabled by an administrator.
+            The user cannot log in until the ban is lifted. Contact support.
           content:
             application/json:
               schema:
@@ -91,22 +159,45 @@ paths:
       tags: [Auth]
       operationId: refreshToken
       summary: Refresh access token
-      description: Exchanges a valid refresh token for a new access token and a new refresh token (rotation).
+      description: |
+        Exchanges a valid refresh token for a **new** access token and a **new** refresh token.
+
+        **Refresh token rotation:** each time you call this endpoint, the old refresh token is
+        immediately **revoked** and a new one is issued. You must always store and use the
+        latest `refreshToken` from the response. Using an old (already-rotated) token will fail
+        with 401.
+
+        **How to test:**
+        1. Log in via `POST /auth/login` and copy the `refreshToken`
+        2. Call this endpoint with that refresh token
+        3. Verify you get a new `accessToken` and a new `refreshToken`
+        4. Try calling again with the **old** refresh token — expect 401
+        5. Use the **new** refresh token for subsequent refreshes
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/RefreshRequestDto'
+            examples:
+              refresh:
+                summary: Refresh with token from login response
+                value:
+                  refreshToken: dGhpcyBpcyBhIHNhbXBsZSByZWZyZXNoIHRva2VuIHZhbHVl
       responses:
         '200':
-          description: Token refreshed successfully
+          description: New token pair issued. Save the new `refreshToken` — the old one is now invalid.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenResponseDto'
         '401':
-          description: Invalid or expired refresh token
+          description: |
+            Invalid or expired refresh token. Possible reasons:
+            - Token was already used (rotation — each token is single-use)
+            - Token has expired (older than 7 days)
+            - Token was revoked via logout
+            The user must log in again with `POST /auth/login`.
           content:
             application/json:
               schema:
@@ -117,18 +208,35 @@ paths:
       tags: [Auth]
       operationId: logout
       summary: Log out (revoke refresh token)
-      description: Revokes the provided refresh token, ending the session.
+      description: |
+        Permanently revokes the provided refresh token, ending the session associated with it.
+
+        **Important:** the `accessToken` is a stateless JWT and remains valid until it naturally
+        expires (up to 15 minutes after the last issuance). There is no way to forcefully
+        invalidate an access token — it will simply stop working after its TTL.
+
+        **How to test:**
+        1. Log in and copy the `refreshToken`
+        2. Call this endpoint with the refresh token
+        3. Verify 204 (no content) response
+        4. Try refreshing with the same token via `POST /auth/refresh` — expect 401
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/LogoutRequestDto'
+            examples:
+              logout:
+                summary: Revoke a refresh token
+                value:
+                  refreshToken: dGhpcyBpcyBhIHNhbXBsZSByZWZyZXNoIHRva2VuIHZhbHVl
       responses:
         '204':
-          description: Logout successful
+          description: Logout successful. The refresh token is permanently revoked.
         '401':
-          description: Invalid refresh token
+          description: |
+            Invalid refresh token. The token may have already been revoked or does not exist.
           content:
             application/json:
               schema:
@@ -139,18 +247,30 @@ paths:
       tags: [User]
       operationId: getMyProfile
       summary: Get current user profile
-      description: Returns the authenticated user's account and profile data.
+      description: |
+        Returns the authenticated user's account and profile data, including display name,
+        timezone, locale, and Telegram integration status.
+
+        **Requires authentication.** Include the access token obtained from `POST /auth/login`
+        in the `Authorization` header: `Authorization: Bearer <accessToken>`.
+
+        **How to test:**
+        1. Log in via `POST /auth/login` and copy the `accessToken`
+        2. Click **Authorize** (top right) and paste the token
+        3. Call this endpoint — you should see your profile data
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: User profile
+          description: User profile with account and personalization settings.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfileResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Either no `Authorization` header was provided,
+            or the access token is invalid/expired. Log in again or refresh the token.
           content:
             application/json:
               schema:
@@ -159,7 +279,18 @@ paths:
       tags: [User]
       operationId: updateMyProfile
       summary: Update current user profile
-      description: Updates display name, timezone, and/or locale for the authenticated user.
+      description: |
+        Updates the authenticated user's profile using **JSON Merge Patch** semantics (RFC 7396):
+        - Field present with a value → **updates** that field
+        - Field absent from the request → **no change** (keeps current value)
+
+        At least one field must be provided. You can update `displayName`, `timezone`, and/or `locale`
+        in a single request.
+
+        **How to test:**
+        1. Call `GET /users/me` to see current values
+        2. Send a PATCH with only `timezone` — verify only timezone changed
+        3. Send a PATCH with both `displayName` and `locale` — verify both updated
       security:
         - bearerAuth: []
       requestBody:
@@ -168,21 +299,35 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateProfileRequestDto'
+            examples:
+              updateTimezone:
+                summary: Update timezone only
+                value:
+                  timezone: America/New_York
+              updateMultiple:
+                summary: Update displayName and locale together
+                value:
+                  displayName: Alice Johnson
+                  locale: en-US
       responses:
         '200':
-          description: Profile updated
+          description: Profile updated. Returns the full profile with all current values.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfileResponseDto'
         '400':
-          description: Validation error
+          description: |
+            Validation error. Possible reasons:
+            - No fields provided (empty body)
+            - Field value exceeds maximum length
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
@@ -191,14 +336,25 @@ paths:
       tags: [User]
       operationId: deleteMyAccount
       summary: Delete current user account
-      description: Soft-deletes the authenticated user's account.
+      description: |
+        **Soft-deletes** the authenticated user's account. The account is deactivated and the
+        user data is retained in the database, but the user can no longer log in (login will
+        return 404).
+
+        **This action cannot be undone via the API.** Contact support to reactivate.
+
+        **How to test:**
+        1. Log in and call this endpoint
+        2. Verify 204 response
+        3. Try logging in again with the same credentials — expect 404
       security:
         - bearerAuth: []
       responses:
         '204':
-          description: Account deleted
+          description: Account soft-deleted. Login will no longer work for this account.
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
@@ -209,7 +365,20 @@ paths:
       tags: [User]
       operationId: connectTelegram
       summary: Connect Telegram account
-      description: Stores the Telegram chat ID for the authenticated user.
+      description: |
+        Links a Telegram account to the authenticated user by storing the Telegram numeric chat ID.
+        This enables Telegram-based notifications and reminders.
+
+        **How to get your Telegram chat ID:**
+        1. Open Telegram and search for `@userinfobot`
+        2. Start a chat and send any message
+        3. The bot replies with your numeric ID (e.g. `987654321`)
+        4. Use that number as the `telegramChatId` value
+
+        **How to test:**
+        1. Get your Telegram chat ID using the method above
+        2. Call this endpoint with the chat ID
+        3. Verify the response includes `telegramChatId` in your profile
       security:
         - bearerAuth: []
       requestBody:
@@ -218,21 +387,28 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ConnectTelegramRequestDto'
+            examples:
+              connect:
+                summary: Connect with a Telegram chat ID
+                value:
+                  telegramChatId: "987654321"
       responses:
         '200':
-          description: Telegram connected
+          description: Telegram connected. Returns the updated user profile.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserProfileResponseDto'
         '400':
-          description: Validation error
+          description: |
+            Validation error. The `telegramChatId` is missing or exceeds 50 characters.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
@@ -243,7 +419,22 @@ paths:
       tags: [Admin]
       operationId: listUsers
       summary: List all users
-      description: Returns a paginated list of all users. Supports filtering by status and searching by email or username. Default sort order is created_at DESC.
+      description: |
+        Returns a paginated list of all users in the system. **Requires ADMIN role.**
+
+        **Query parameters:**
+        - `status` — filter by account status: `active` (enabled, not deleted), `banned` (disabled by admin), `deleted` (soft-deleted by user). Omit to return all.
+        - `search` — case-insensitive partial match on email or username. Example: `search=john` matches `john_doe`, `johnny`, `alice@john.com`.
+        - `page` — 0-indexed page number (default: 0). First page is `page=0`.
+        - `size` — number of results per page (default: 20, max: 100).
+
+        Default sort order: `created_at DESC` (newest users first).
+
+        **How to test:**
+        1. Log in as an admin user
+        2. Call `GET /admin/users` — see all users
+        3. Try `GET /admin/users?status=active&search=alice&page=0&size=10`
+        4. Log in as a regular user — expect 403
       security:
         - bearerAuth: []
       parameters:
@@ -253,13 +444,13 @@ paths:
           schema:
             type: string
             enum: [active, banned, deleted]
-          description: Filter by user status
+          description: "Filter by user status: `active` = enabled and not deleted, `banned` = disabled by admin, `deleted` = soft-deleted"
         - name: search
           in: query
           required: false
           schema:
             type: string
-          description: Case-insensitive partial match on email or username
+          description: "Case-insensitive partial match on email or username. Example: `john` matches `john_doe` and `alice@john.com`"
         - name: page
           in: query
           required: false
@@ -267,7 +458,7 @@ paths:
             type: integer
             default: 0
             minimum: 0
-          description: Page number (0-indexed)
+          description: "Page number, 0-indexed. First page is `page=0`"
         - name: size
           in: query
           required: false
@@ -276,22 +467,25 @@ paths:
             default: 20
             minimum: 1
             maximum: 100
-          description: Page size
+          description: "Number of results per page (default: 20, max: 100)"
       responses:
         '200':
-          description: Paginated user list
+          description: Paginated user list sorted by `created_at DESC`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserPageResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '403':
-          description: Not an admin
+          description: |
+            Forbidden. The authenticated user does not have the ADMIN role.
+            Only admin accounts can access this endpoint.
           content:
             application/json:
               schema:
@@ -302,7 +496,18 @@ paths:
       tags: [Admin]
       operationId: getUserById
       summary: Get user by ID
-      description: Returns a specific user's account and profile details.
+      description: |
+        Returns full account and profile details for a specific user. **Requires ADMIN role.**
+
+        The response includes all profile fields plus admin-specific fields like `enabled`,
+        `deletedAt`, and `telegramChatId`.
+
+        Returns 404 if the user ID does not exist in the system.
+
+        **How to test:**
+        1. Call `GET /admin/users` to find a user ID
+        2. Call this endpoint with that ID
+        3. Try a random UUID — expect 404
       security:
         - bearerAuth: []
       parameters:
@@ -312,27 +517,31 @@ paths:
           schema:
             type: string
             format: uuid
+          description: User UUID
       responses:
         '200':
-          description: User details
+          description: Full user details including profile and admin metadata.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminUserResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '403':
-          description: Not an admin
+          description: |
+            Forbidden. The authenticated user does not have the ADMIN role.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '404':
-          description: User not found
+          description: |
+            User not found. No user exists with the given UUID.
           content:
             application/json:
               schema:
@@ -343,7 +552,20 @@ paths:
       tags: [Admin]
       operationId: banUser
       summary: Ban a user
-      description: Disables the user's account and revokes all their refresh tokens.
+      description: |
+        Bans a user by setting `enabled=false` and **immediately revoking all** their refresh tokens.
+        **Requires ADMIN role.**
+
+        The banned user's existing access token remains valid until it expires (up to 15 minutes),
+        but they will lose access completely once it does — they cannot refresh or log in again
+        while banned.
+
+        **How to test:**
+        1. Create a test user and log in as that user (save their tokens)
+        2. Log in as admin and call this endpoint with the test user's ID
+        3. Verify the response shows `enabled: false`
+        4. Try refreshing the test user's token — expect 401
+        5. Try logging in as the test user — expect 403
       security:
         - bearerAuth: []
       parameters:
@@ -353,27 +575,31 @@ paths:
           schema:
             type: string
             format: uuid
+          description: UUID of the user to ban
       responses:
         '200':
-          description: User banned
+          description: User banned. All refresh tokens revoked. Returns updated user details.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminUserResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '403':
-          description: Not an admin
+          description: |
+            Forbidden. The authenticated user does not have the ADMIN role.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '404':
-          description: User not found
+          description: |
+            User not found. No user exists with the given UUID.
           content:
             application/json:
               schema:
@@ -384,7 +610,22 @@ paths:
       tags: [Habit]
       operationId: getHabits
       summary: List user habits
-      description: Returns a paginated list of the authenticated user's habits, optionally filtered by active/inactive status. Sorted by created_at DESC.
+      description: |
+        Returns a paginated list of the authenticated user's habits. Only **non-deleted** habits
+        are returned. Soft-deleted habits are permanently excluded from this list.
+
+        Use the `status` parameter to filter by active/inactive habits:
+        - `status=active` — only habits that accept completions
+        - `status=inactive` — only paused habits
+        - Omit `status` — returns both active and inactive
+
+        Sorted by `created_at DESC` (newest habits first).
+
+        **How to test:**
+        1. Create a few habits via `POST /habits`
+        2. Call `GET /habits` — see all your habits
+        3. Try `GET /habits?status=active&page=0&size=5`
+        4. Deactivate a habit, then filter by `status=inactive` to confirm
       security:
         - bearerAuth: []
       parameters:
@@ -394,7 +635,7 @@ paths:
           schema:
             type: string
             enum: [active, inactive]
-          description: Filter by habit status
+          description: "Filter by habit status: `active` = accepting completions, `inactive` = paused"
         - name: page
           in: query
           required: false
@@ -402,7 +643,7 @@ paths:
             type: integer
             default: 0
             minimum: 0
-          description: Page number (0-indexed)
+          description: "Page number, 0-indexed"
         - name: size
           in: query
           required: false
@@ -411,16 +652,17 @@ paths:
             default: 20
             minimum: 1
             maximum: 100
-          description: Page size
+          description: "Number of results per page (default: 20, max: 100)"
       responses:
         '200':
-          description: Paginated habit list
+          description: Paginated list of non-deleted habits.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HabitPageResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
@@ -430,7 +672,23 @@ paths:
       tags: [Habit]
       operationId: createHabit
       summary: Create a new habit
-      description: Creates a habit for the authenticated user with the given properties.
+      description: |
+        Creates a new habit for the authenticated user.
+
+        **Business rules:**
+        - `frequency` is required: `DAILY` (every day), `WEEKLY` (once per week), or `CUSTOM` (specific days).
+        - When `frequency=CUSTOM`, the `targetDaysOfWeek` array is **required** and must contain at least one day.
+        - When `frequency=DAILY` or `WEEKLY`, `targetDaysOfWeek` is ignored if provided.
+        - `reminderTime` is optional, format: `HH:mm` (24-hour). Examples: `"07:00"`, `"23:30"`, `"00:15"`.
+        - `title` is required, 1–200 characters.
+        - `description` is optional, free-text.
+
+        The habit is created in **active** state (`isActive=true`) by default.
+
+        **How to test:**
+        1. Create a daily habit (see "Daily habit" example)
+        2. Create a custom habit with specific days (see "Custom days habit" example)
+        3. Try creating with `frequency=CUSTOM` but no `targetDaysOfWeek` — expect 400
       security:
         - bearerAuth: []
       requestBody:
@@ -439,21 +697,46 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateHabitRequestDto'
+            examples:
+              daily:
+                summary: Daily habit (no target days needed)
+                value:
+                  title: Morning meditation
+                  description: 10 minutes of mindfulness every day
+                  frequency: DAILY
+                  reminderTime: "07:00"
+              custom:
+                summary: Custom days habit (targetDaysOfWeek required)
+                value:
+                  title: Morning run
+                  description: Run 5km
+                  frequency: CUSTOM
+                  targetDaysOfWeek:
+                    - MONDAY
+                    - WEDNESDAY
+                    - FRIDAY
+                  reminderTime: "07:00"
       responses:
         '201':
-          description: Habit created
+          description: Habit created successfully in active state.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HabitResponseDto'
         '400':
-          description: Validation error
+          description: |
+            Validation error. Possible reasons:
+            - `title` is missing or exceeds 200 characters
+            - `frequency` is missing or not one of DAILY, WEEKLY, CUSTOM
+            - `frequency=CUSTOM` but `targetDaysOfWeek` is missing or empty
+            - `reminderTime` does not match `HH:mm` format
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
@@ -464,7 +747,17 @@ paths:
       tags: [Habit]
       operationId: getHabit
       summary: Get habit by ID
-      description: Returns full details of a specific habit owned by the authenticated user.
+      description: |
+        Returns full details of a specific habit owned by the authenticated user.
+
+        Returns 404 if the habit does not exist **or** belongs to another user.
+        This prevents information leakage — you cannot determine whether a habit ID
+        belongs to someone else or simply does not exist.
+
+        **How to test:**
+        1. Create a habit and note the `id` from the response
+        2. Call this endpoint with that ID — see full details
+        3. Try a random UUID — expect 404
       security:
         - bearerAuth: []
       parameters:
@@ -474,21 +767,25 @@ paths:
           schema:
             type: string
             format: uuid
+          description: Habit UUID
       responses:
         '200':
-          description: Habit details
+          description: Full habit details.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HabitResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '404':
-          description: Habit not found or not owned by user
+          description: |
+            Habit not found. Either the habit does not exist or it belongs to another user.
+            The response is intentionally identical in both cases to prevent information leakage.
           content:
             application/json:
               schema:
@@ -498,7 +795,21 @@ paths:
       tags: [Habit]
       operationId: updateHabit
       summary: Update a habit
-      description: Updates one or more properties of an existing habit owned by the authenticated user. Follows JSON Merge Patch semantics (RFC 7396).
+      description: |
+        Updates one or more properties of an existing habit. Follows **JSON Merge Patch**
+        semantics (RFC 7396):
+        - Field present with a value → **updates** that field
+        - Field absent from the request → **no change**
+        - Field present with `null` → **clears** that field (for nullable fields like `description`, `reminderTime`, `targetDaysOfWeek`)
+
+        At least one field must be provided.
+
+        **How to test:**
+        1. Create a habit and note the ID
+        2. Update only the title (see "Update title only" example)
+        3. Deactivate it (see "Deactivate habit" example)
+        4. Clear the reminder (see "Clear reminderTime" example)
+        5. Verify each change with `GET /habits/{id}`
       security:
         - bearerAuth: []
       parameters:
@@ -508,33 +819,54 @@ paths:
           schema:
             type: string
             format: uuid
+          description: Habit UUID
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateHabitRequestDto'
+            examples:
+              updateTitle:
+                summary: Update title only
+                value:
+                  title: Evening meditation
+              deactivate:
+                summary: Deactivate habit (pause completions)
+                value:
+                  isActive: false
+              clearReminder:
+                summary: Clear reminderTime (set to null)
+                value:
+                  reminderTime: null
       responses:
         '200':
-          description: Habit updated
+          description: Habit updated. Returns the full habit with all current values.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HabitResponseDto'
         '400':
-          description: Validation error
+          description: |
+            Validation error. Possible reasons:
+            - No fields provided (empty body)
+            - `title` exceeds 200 characters or is empty
+            - `reminderTime` does not match `HH:mm` format
+            - `frequency=CUSTOM` but `targetDaysOfWeek` is missing or empty
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '404':
-          description: Habit not found or not owned by user
+          description: |
+            Habit not found or not owned by the authenticated user.
           content:
             application/json:
               schema:
@@ -544,7 +876,18 @@ paths:
       tags: [Habit]
       operationId: deleteHabit
       summary: Delete a habit
-      description: Soft-deletes a habit owned by the authenticated user. The habit is excluded from lists but data is retained.
+      description: |
+        **Soft-deletes** a habit owned by the authenticated user. The habit is excluded from
+        all list endpoints (`GET /habits`) but its data — including completion history and
+        streak records — is retained in the database.
+
+        After deletion, you **cannot** log new completions for this habit (it will return 404).
+
+        **How to test:**
+        1. Create a habit, log a few completions
+        2. Delete the habit — verify 204
+        3. Call `GET /habits` — the deleted habit should not appear
+        4. Try completing the deleted habit — expect 404
       security:
         - bearerAuth: []
       parameters:
@@ -554,17 +897,20 @@ paths:
           schema:
             type: string
             format: uuid
+          description: Habit UUID
       responses:
         '204':
-          description: Habit deleted
+          description: Habit soft-deleted. Completion history and streak data are preserved.
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '404':
-          description: Habit not found or not owned by user
+          description: |
+            Habit not found or not owned by the authenticated user.
           content:
             application/json:
               schema:
@@ -575,7 +921,22 @@ paths:
       tags: [Habit]
       operationId: completeHabit
       summary: Log a habit completion
-      description: Logs a completion for a specific active habit on a given date. One completion per habit per date. Automatically recalculates streak.
+      description: |
+        Logs a completion for a specific habit on a given date. Only **one completion per habit
+        per date** is allowed. The streak is **automatically recalculated** after each completion.
+
+        **Business rules:**
+        - The `date` field accepts today or any past date in `YYYY-MM-DD` format.
+        - The `note` field is optional — use it to record details (e.g. "5km in 25 minutes").
+        - The habit must be **active** (`isActive=true`) to accept completions.
+        - Returns 409 if a completion already exists for this habit on this date, or if the habit is inactive.
+
+        **How to test:**
+        1. Create an active habit
+        2. Log a completion for today (see examples below)
+        3. Try logging again for the same date — expect 409
+        4. Deactivate the habit, then try completing — expect 409
+        5. Check the streak via `GET /habits/{id}/streak`
       security:
         - bearerAuth: []
       parameters:
@@ -585,39 +946,56 @@ paths:
           schema:
             type: string
             format: uuid
+          description: Habit UUID
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CompleteHabitRequestDto'
+            examples:
+              withNote:
+                summary: Completion with a note
+                value:
+                  date: "2026-03-30"
+                  note: 5km in 25 minutes
+              withoutNote:
+                summary: Completion without a note
+                value:
+                  date: "2026-03-30"
       responses:
         '201':
-          description: Completion logged
+          description: Completion logged. Streak recalculated automatically.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HabitLogResponseDto'
         '400':
-          description: Validation error
+          description: |
+            Validation error. The `date` field is missing or not in `YYYY-MM-DD` format.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '404':
-          description: Habit not found or not owned by user
+          description: |
+            Habit not found or not owned by the authenticated user.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '409':
-          description: Completion already exists for this date or habit is inactive
+          description: |
+            Conflict. Possible reasons:
+            - A completion already exists for this habit on this date (one per day limit)
+            - The habit is inactive (`isActive=false`) and does not accept completions
           content:
             application/json:
               schema:
@@ -628,7 +1006,17 @@ paths:
       tags: [Habit]
       operationId: deleteHabitLog
       summary: Delete a completion log
-      description: Soft-deletes a completion log entry. Automatically recalculates streak.
+      description: |
+        Soft-deletes a specific completion log entry. The streak is **automatically recalculated**
+        after deletion.
+
+        The `logId` can be obtained from the `id` field in the `GET /habits/{id}/logs` response.
+
+        **How to test:**
+        1. Log a completion for a habit
+        2. Call `GET /habits/{id}/logs` and copy a log `id`
+        3. Delete it with this endpoint — verify 204
+        4. Check `GET /habits/{id}/streak` — streak should be recalculated
       security:
         - bearerAuth: []
       parameters:
@@ -638,23 +1026,28 @@ paths:
           schema:
             type: string
             format: uuid
+          description: Habit UUID
         - name: logId
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: "Completion log UUID (from `GET /habits/{id}/logs` response)"
       responses:
         '204':
-          description: Log deleted
+          description: Log soft-deleted. Streak recalculated automatically.
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '404':
-          description: Habit or log not found
+          description: |
+            Habit or log not found. Either the habit ID or log ID does not exist,
+            or the habit belongs to another user.
           content:
             application/json:
               schema:
@@ -665,7 +1058,19 @@ paths:
       tags: [Habit]
       operationId: getHabitLogs
       summary: List completion logs for a habit
-      description: Returns a paginated list of completion log entries for a specific habit, sorted by date descending.
+      description: |
+        Returns a paginated list of completion log entries for a specific habit, sorted by
+        `date DESC` (most recent first). Only **active** (non-deleted) logs are returned.
+
+        Each log entry contains:
+        - `id` — unique log identifier (use this as `logId` when deleting)
+        - `date` — the completion date in ISO 8601 format (`YYYY-MM-DD`)
+        - `note` — optional comment added during completion
+
+        **How to test:**
+        1. Log several completions for a habit on different dates
+        2. Call this endpoint — verify logs appear in reverse chronological order
+        3. Delete a log entry and call again — verify it no longer appears
       security:
         - bearerAuth: []
       parameters:
@@ -675,6 +1080,7 @@ paths:
           schema:
             type: string
             format: uuid
+          description: Habit UUID
         - name: page
           in: query
           required: false
@@ -682,7 +1088,7 @@ paths:
             type: integer
             default: 0
             minimum: 0
-          description: Page number (0-indexed)
+          description: "Page number, 0-indexed"
         - name: size
           in: query
           required: false
@@ -691,22 +1097,24 @@ paths:
             default: 20
             minimum: 1
             maximum: 100
-          description: Page size
+          description: "Number of results per page (default: 20, max: 100)"
       responses:
         '200':
-          description: Paginated log list
+          description: Paginated list of active completion logs, sorted by date DESC.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HabitLogPageResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '404':
-          description: Habit not found or not owned by user
+          description: |
+            Habit not found or not owned by the authenticated user.
           content:
             application/json:
               schema:
@@ -717,7 +1125,19 @@ paths:
       tags: [Habit]
       operationId: getHabitStreak
       summary: Get streak data for a habit
-      description: Returns the current streak, longest streak, and last log date for a specific habit.
+      description: |
+        Returns streak statistics for a specific habit.
+
+        **Response fields:**
+        - `currentStreak` — number of consecutive days (for DAILY habits) ending today or yesterday where a completion was logged. Resets to **0** if the last log is more than 1 day ago.
+        - `longestStreak` — the historical maximum streak ever achieved for this habit. Never decreases.
+        - `lastLogDate` — the date of the most recent completion log (`YYYY-MM-DD`), or `null` if no completions exist.
+
+        **How to test:**
+        1. Create a habit and log completions for consecutive days
+        2. Call this endpoint — `currentStreak` should match the number of days
+        3. Skip a day, then check again — `currentStreak` should be 0
+        4. `longestStreak` should still reflect the previous streak
       security:
         - bearerAuth: []
       parameters:
@@ -727,21 +1147,24 @@ paths:
           schema:
             type: string
             format: uuid
+          description: Habit UUID
       responses:
         '200':
-          description: Streak data
+          description: Current and historical streak data.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HabitStreakResponseDto'
         '401':
-          description: Not authenticated
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
         '404':
-          description: Habit not found or not owned by user
+          description: |
+            Habit not found or not owned by the authenticated user.
           content:
             application/json:
               schema:
@@ -753,7 +1176,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT access token obtained from /auth/login or /auth/refresh
+      description: "JWT access token obtained from `POST /auth/login` or `POST /auth/refresh`. Include as: `Authorization: Bearer <token>`"
 
   schemas:
     RegisterRequestDto:
@@ -764,17 +1187,20 @@ components:
           type: string
           format: email
           maxLength: 255
+          description: "Valid email address. Must be unique across all accounts."
           example: user@example.com
         username:
           type: string
           minLength: 3
           maxLength: 32
           pattern: '^[a-z0-9_-]+$'
+          description: "Unique username. Lowercase letters, digits, underscores, and hyphens only. 3–32 characters."
           example: john_doe
         password:
           type: string
           minLength: 8
           format: password
+          description: "Account password. Minimum 8 characters."
           example: SecurePass1
 
     LoginRequestDto:
@@ -783,11 +1209,12 @@ components:
       properties:
         identifier:
           type: string
-          description: Email or username
+          description: "Email address or username. The server detects which one was provided."
           example: user@example.com
         password:
           type: string
           format: password
+          description: "Account password."
           example: SecurePass1
 
     RefreshRequestDto:
@@ -796,7 +1223,7 @@ components:
       properties:
         refreshToken:
           type: string
-          description: Refresh token from login or previous refresh
+          description: "Refresh token from the most recent login or refresh response. Each token is single-use — always use the latest one."
 
     LogoutRequestDto:
       type: object
@@ -804,24 +1231,27 @@ components:
       properties:
         refreshToken:
           type: string
-          description: Refresh token to revoke
+          description: "Refresh token to permanently revoke. After revocation, this token cannot be used again."
 
     UpdateProfileRequestDto:
       type: object
       minProperties: 1
-      description: At least one field must be provided
+      description: "At least one field must be provided. Only provided fields are updated (JSON Merge Patch semantics)."
       properties:
         displayName:
           type: string
           maxLength: 150
+          description: "User's display name. Up to 150 characters."
           example: John Doe
         timezone:
           type: string
           maxLength: 50
+          description: "IANA timezone identifier (e.g. `Europe/Moscow`, `America/New_York`)."
           example: Europe/Moscow
         locale:
           type: string
           maxLength: 10
+          description: "BCP 47 locale tag (e.g. `ru-RU`, `en-US`)."
           example: ru-RU
 
     ConnectTelegramRequestDto:
@@ -831,6 +1261,7 @@ components:
         telegramChatId:
           type: string
           maxLength: 50
+          description: "Numeric Telegram chat ID. Get it by messaging `@userinfobot` in Telegram."
           example: '123456789'
 
     TokenResponseDto:
@@ -839,13 +1270,13 @@ components:
       properties:
         accessToken:
           type: string
-          description: JWT access token (15 min validity)
+          description: "JWT RS256 token. Include as: `Authorization: Bearer <token>`. Valid for 15 minutes."
         refreshToken:
           type: string
-          description: Refresh token (7 day validity)
+          description: "Opaque token. Store securely. Valid for 7 days. Rotated on each refresh — always save the latest one."
         expiresIn:
           type: integer
-          description: Access token TTL in seconds
+          description: "Access token TTL in seconds (900 = 15 minutes)."
           example: 900
 
     UserResponseDto:
@@ -855,16 +1286,21 @@ components:
         id:
           type: string
           format: uuid
+          description: "Unique user identifier."
         email:
           type: string
+          description: "User's email address."
         username:
           type: string
+          description: "User's unique username."
         role:
           type: string
           enum: [USER, ADMIN]
+          description: "User role. `USER` = regular user, `ADMIN` = administrator."
         createdAt:
           type: string
           format: date-time
+          description: "Account creation timestamp (ISO 8601)."
 
     UserProfileResponseDto:
       type: object
@@ -873,24 +1309,33 @@ components:
         id:
           type: string
           format: uuid
+          description: "Unique user identifier."
         email:
           type: string
+          description: "User's email address."
         username:
           type: string
+          description: "User's unique username."
         role:
           type: string
           enum: [USER, ADMIN]
+          description: "User role. `USER` = regular user, `ADMIN` = administrator."
         displayName:
           type: string
+          description: "User's display name. May be null if not set."
         timezone:
           type: string
+          description: "IANA timezone identifier (e.g. `Europe/Moscow`)."
         locale:
           type: string
+          description: "BCP 47 locale tag (e.g. `ru-RU`)."
         telegramChatId:
           type: string
+          description: "Linked Telegram chat ID, or null if Telegram is not connected."
         createdAt:
           type: string
           format: date-time
+          description: "Account creation timestamp (ISO 8601)."
 
     AdminUserResponseDto:
       type: object
@@ -899,29 +1344,40 @@ components:
         id:
           type: string
           format: uuid
+          description: "Unique user identifier."
         email:
           type: string
+          description: "User's email address."
         username:
           type: string
+          description: "User's unique username."
         role:
           type: string
           enum: [USER, ADMIN]
+          description: "User role."
         enabled:
           type: boolean
+          description: "`true` = account active, `false` = account banned by admin."
         displayName:
           type: string
+          description: "User's display name."
         timezone:
           type: string
+          description: "IANA timezone identifier."
         locale:
           type: string
+          description: "BCP 47 locale tag."
         telegramChatId:
           type: string
+          description: "Linked Telegram chat ID."
         createdAt:
           type: string
           format: date-time
+          description: "Account creation timestamp (ISO 8601)."
         deletedAt:
           type: string
           format: date-time
+          description: "Soft-deletion timestamp (ISO 8601). Null if account is not deleted."
 
     UserPageResponseDto:
       type: object
@@ -931,19 +1387,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdminUserResponseDto'
+          description: "List of users on the current page."
         totalElements:
           type: integer
           format: int64
+          description: "Total number of users matching the filter criteria."
         totalPages:
           type: integer
+          description: "Total number of pages."
         page:
           type: integer
+          description: "Current page number (0-indexed)."
         size:
           type: integer
+          description: "Page size (number of items per page)."
 
     DayOfWeekDto:
       type: string
       enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+      description: "Day of the week. Used in `targetDaysOfWeek` for CUSTOM frequency habits."
 
     CreateHabitRequestDto:
       type: object
@@ -953,54 +1415,68 @@ components:
           type: string
           minLength: 1
           maxLength: 200
-          example: Morning run
+          description: "Habit name. 1–200 characters."
         description:
           type: string
-          example: Run 5km every morning
+          description: "Optional detailed description of the habit."
         frequency:
           type: string
           enum: [DAILY, WEEKLY, CUSTOM]
+          description: "`DAILY` = every day, `WEEKLY` = once per week, `CUSTOM` = specific days (requires `targetDaysOfWeek`)."
         targetDaysOfWeek:
           type: array
           items:
             $ref: '#/components/schemas/DayOfWeekDto'
-          description: Required when frequency is CUSTOM
-          example: [MONDAY, WEDNESDAY, FRIDAY]
+          description: "**Required** when `frequency=CUSTOM`. List of days when the habit should be performed. Ignored for DAILY and WEEKLY."
         reminderTime:
           type: string
-          pattern: '^\d{2}:\d{2}$'
-          description: Reminder time in HH:mm format
-          example: '07:00'
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          description: "Optional reminder time in `HH:mm` format (24-hour). Examples: `07:00`, `23:30`, `00:15`."
+      example:
+        title: Morning run
+        description: Run 5km every morning
+        frequency: CUSTOM
+        targetDaysOfWeek:
+          - MONDAY
+          - WEDNESDAY
+          - FRIDAY
+        reminderTime: "07:00"
 
     UpdateHabitRequestDto:
       type: object
       minProperties: 1
-      description: At least one field must be provided. Follows JSON Merge Patch semantics (RFC 7396). Send null to clear optional fields.
+      description: "At least one field must be provided. Follows JSON Merge Patch semantics (RFC 7396). Send `null` to clear optional fields."
       properties:
         title:
           type: string
           minLength: 1
           maxLength: 200
+          description: "New habit name. 1–200 characters."
         description:
           type:
             - string
             - 'null'
+          description: "New description. Send `null` to clear."
         frequency:
           type: string
           enum: [DAILY, WEEKLY, CUSTOM]
+          description: "New frequency. If changed to CUSTOM, `targetDaysOfWeek` must also be provided."
         targetDaysOfWeek:
           type:
             - array
             - 'null'
           items:
             $ref: '#/components/schemas/DayOfWeekDto'
+          description: "New target days. Send `null` to clear. Required if frequency is CUSTOM."
         reminderTime:
           type:
             - string
             - 'null'
-          pattern: '^\d{2}:\d{2}$'
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          description: "New reminder time in `HH:mm` format. Send `null` to remove the reminder."
         isActive:
           type: boolean
+          description: "Set to `false` to pause the habit (completions will be rejected). Set to `true` to reactivate."
 
     CompleteHabitRequestDto:
       type: object
@@ -1009,10 +1485,11 @@ components:
         date:
           type: string
           format: date
-          description: Completion date (ISO 8601)
+          description: "ISO 8601 date (`YYYY-MM-DD`). Can be today or a past date."
           example: '2026-03-30'
         note:
           type: string
+          description: "Optional comment about this completion (e.g. duration, distance, mood)."
           example: 5km in 25 minutes
 
     HabitResponseDto:
@@ -1022,24 +1499,32 @@ components:
         id:
           type: string
           format: uuid
+          description: "Unique habit identifier."
         title:
           type: string
+          description: "Habit name."
         description:
           type: string
+          description: "Detailed description of the habit. May be null."
         frequency:
           type: string
           enum: [DAILY, WEEKLY, CUSTOM]
+          description: "How often the habit should be performed."
         targetDaysOfWeek:
           type: array
           items:
             $ref: '#/components/schemas/DayOfWeekDto'
+          description: "Target days for CUSTOM frequency habits. Empty or null for DAILY/WEEKLY."
         reminderTime:
           type: string
+          description: "Reminder time in `HH:mm` format, or null if not set."
         isActive:
           type: boolean
+          description: "`true` = habit is active and accepts completions. `false` = habit is paused, completions are rejected."
         createdAt:
           type: string
           format: date-time
+          description: "Habit creation timestamp (ISO 8601)."
 
     HabitLogResponseDto:
       type: object
@@ -1048,17 +1533,22 @@ components:
         id:
           type: string
           format: uuid
+          description: "Unique log entry identifier. Use as `logId` when deleting a completion."
         habitId:
           type: string
           format: uuid
+          description: "ID of the habit this completion belongs to."
         date:
           type: string
           format: date
+          description: "Completion date in ISO 8601 format (`YYYY-MM-DD`)."
         note:
           type: string
+          description: "Optional comment added during completion. May be null."
         createdAt:
           type: string
           format: date-time
+          description: "Timestamp when this log entry was created (ISO 8601)."
 
     HabitStreakResponseDto:
       type: object
@@ -1066,13 +1556,16 @@ components:
       properties:
         currentStreak:
           type: integer
+          description: "Consecutive days ending today or yesterday where a completion was logged. Resets to 0 if the streak is broken."
           example: 6
         longestStreak:
           type: integer
+          description: "Historical maximum streak ever achieved for this habit. Never decreases."
           example: 14
         lastLogDate:
           type: string
           format: date
+          description: "Date of the most recent completion log (`YYYY-MM-DD`). Null if no completions exist."
 
     HabitPageResponseDto:
       type: object
@@ -1082,15 +1575,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HabitResponseDto'
+          description: "List of habits on the current page."
         totalElements:
           type: integer
           format: int64
+          description: "Total number of habits matching the filter criteria."
         totalPages:
           type: integer
+          description: "Total number of pages."
         page:
           type: integer
+          description: "Current page number (0-indexed)."
         size:
           type: integer
+          description: "Page size (number of items per page)."
 
     HabitLogPageResponseDto:
       type: object
@@ -1100,15 +1598,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HabitLogResponseDto'
+          description: "List of completion logs on the current page."
         totalElements:
           type: integer
           format: int64
+          description: "Total number of log entries for this habit."
         totalPages:
           type: integer
+          description: "Total number of pages."
         page:
           type: integer
+          description: "Current page number (0-indexed)."
         size:
           type: integer
+          description: "Page size (number of items per page)."
 
     ErrorResponseDto:
       type: object
@@ -1116,11 +1619,16 @@ components:
         timestamp:
           type: string
           format: date-time
+          description: "When the error occurred (ISO 8601)."
         status:
           type: integer
+          description: "HTTP status code (e.g. 400, 401, 404, 409)."
         error:
           type: string
+          description: "HTTP status reason phrase (e.g. `Bad Request`, `Not Found`)."
         message:
           type: string
+          description: "Human-readable error message with details about what went wrong."
         path:
           type: string
+          description: "Request URI path that caused the error."

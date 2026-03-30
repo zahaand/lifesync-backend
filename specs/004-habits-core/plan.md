@@ -90,7 +90,7 @@ lifesync-application/
     ├── DeleteHabitLogUseCase.java      # Soft-deletes log + recalculates streak
     ├── GetHabitLogsUseCase.java
     ├── GetHabitStreakUseCase.java
-    └── StreakCalculatorService.java    # Pure domain logic, injected Clock
+    └── StreakCalculatorService.java    # Application service, injected Clock
 
 lifesync-infrastructure/
 └── src/main/java/ru/zahaand/lifesync/infrastructure/habit/
@@ -168,8 +168,8 @@ Add to `lifesync-infrastructure/pom.xml`:
 - `HabitLog` immutable class: id, habitId, userId, logDate, note, createdAt, updatedAt, deletedAt. Methods: `softDelete(Instant)`, `isDeleted()`
 - `HabitStreak` record: habitId, currentStreak, longestStreak, lastLogDate
 - `HabitRepository` port: `save(Habit)`, `findByIdAndUserId(HabitId, UserId)`, `findAllByUserId(UserId, String status, int page, int size)`, `update(Habit)`. Inner record `HabitPage` for pagination.
-- `HabitLogRepository` port: `save(HabitLog)`, `findByIdAndUserId(HabitLogId, UserId)`, `findByHabitIdAndUserId(HabitId, UserId, int page, int size)`, `findByHabitIdAndLogDate(HabitId, LocalDate)`, `update(HabitLog)`, `findLogDatesDesc(HabitId)`. Inner record `HabitLogPage`.
-- `HabitStreakRepository` port: `findByHabitId(HabitId)`, `save(HabitStreak)`, `update(HabitStreak)`
+- `HabitLogRepository` port: `save(HabitLog)`, `findByIdAndUserId(HabitLogId, UserId)`, `findByHabitIdAndUserId(HabitId, UserId, int page, int size)`, `findByHabitIdAndLogDateAndUserId(HabitId, LocalDate, UserId)`, `update(HabitLog)`, `findLogDatesDesc(HabitId, UserId)`. Inner record `HabitLogPage`. NOTE: All methods include UserId per Constitution §III.
+- `HabitStreakRepository` port: `findByHabitIdAndUserId(HabitId, UserId)`, `save(HabitStreak)`, `update(HabitStreak)`. NOTE: findByHabitId includes UserId per Constitution §III.
 - Domain exceptions: `HabitNotFoundException`, `HabitInactiveException`, `DuplicateHabitLogException`
 
 **1.3 — OpenAPI YAML (9 habit endpoints)**
@@ -205,7 +205,7 @@ New DTOs:
 
 **2.1 — StreakCalculatorService (lifesync-application)**
 
-Pure application service with injected `Clock`:
+Application service with injected `Clock`. Placed in lifesync-application (not domain) because it requires Clock injection — a Spring bean:
 - `HabitStreak calculate(Frequency frequency, DayOfWeekSet targetDays, List<LocalDate> logDatesDesc)`
 - DAILY: walk backwards from today/yesterday counting consecutive days
 - WEEKLY: group by ISO week, count consecutive weeks with >= 1 log

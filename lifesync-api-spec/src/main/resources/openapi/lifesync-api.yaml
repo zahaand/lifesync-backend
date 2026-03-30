@@ -948,6 +948,7 @@ components:
       properties:
         title:
           type: string
+          minLength: 1
           maxLength: 200
           example: Morning run
         description:
@@ -971,22 +972,29 @@ components:
     UpdateHabitRequestDto:
       type: object
       minProperties: 1
-      description: At least one field must be provided. Follows JSON Merge Patch semantics (RFC 7396).
+      description: At least one field must be provided. Follows JSON Merge Patch semantics (RFC 7396). Send null to clear optional fields.
       properties:
         title:
           type: string
+          minLength: 1
           maxLength: 200
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         frequency:
           type: string
           enum: [DAILY, WEEKLY, CUSTOM]
         targetDaysOfWeek:
-          type: array
+          type:
+            - array
+            - 'null'
           items:
             $ref: '#/components/schemas/DayOfWeekDto'
         reminderTime:
-          type: string
+          type:
+            - string
+            - 'null'
           pattern: '^\d{2}:\d{2}$'
         isActive:
           type: boolean

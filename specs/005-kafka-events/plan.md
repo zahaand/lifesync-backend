@@ -61,8 +61,6 @@ lifesync-domain/
     │   ├── DomainEvent.java                    # Sealed interface: eventId, occurredAt
     │   ├── HabitCompletedEvent.java             # Record: habitId, userId, logDate, completionId, occurredAt
     │   └── GoalProgressUpdatedEvent.java        # Record stub: goalId, userId, habitId, progressPercentage, occurredAt
-    ├── habit/
-    │   └── HabitEventPublisher.java             # Port interface: publish(HabitCompletedEvent)
     └── user/
         └── TelegramNotificationSender.java      # Port interface: send(String chatId, String message)
 
@@ -74,7 +72,7 @@ lifesync-application/
 lifesync-infrastructure/
 └── src/main/java/ru/zahaand/lifesync/infrastructure/
     ├── event/
-    │   ├── KafkaHabitEventPublisher.java         # Implements HabitEventPublisher via KafkaTemplate
+    │   ├── KafkaHabitEventPublisher.java         # @Component: @TransactionalEventListener → KafkaTemplate
     │   ├── ProcessedEventRepository.java         # jOOQ repository for idempotency checks
     │   └── config/
     │       └── KafkaTopicConfig.java             # Topic beans: habit.log.completed, goal.progress.updated, DLQs
@@ -160,19 +158,14 @@ public record GoalProgressUpdatedEvent(
 
 **0.3 — Domain ports (lifesync-domain)**
 
-`HabitEventPublisher` port in `ru.zahaand.lifesync.domain.habit`:
-```java
-public interface HabitEventPublisher {
-    void publish(HabitCompletedEvent event);
-}
-```
-
 `TelegramNotificationSender` port in `ru.zahaand.lifesync.domain.user`:
 ```java
 public interface TelegramNotificationSender {
     void send(String chatId, String message);
 }
 ```
+
+NOTE: `HabitEventPublisher` domain port is NOT created. Use cases inject `ApplicationEventPublisher` (Spring) directly — `spring-context` is available in `lifesync-application` via existing Spring Boot dependencies. `KafkaHabitEventPublisher` listens via `@TransactionalEventListener(AFTER_COMMIT)` and does not need a domain port interface.
 
 ### Phase 1: Kafka Infrastructure & Configuration
 
@@ -212,13 +205,13 @@ lifesync:
 
 Create `KafkaConsumerConfig` in `lifesync-infrastructure` with:
 - `ConcurrentKafkaListenerContainerFactory` bean
-- `DefaultErrorHandler` with exponential backoff (1s, 2s, 4s, max 3 attempts)
+- `DefaultErrorHandler` with exponential backoff (1s, 2s, 4s, maxAttempts=4 i.e. 1 original + 3 retries)
 - `DeadLetterPublishingRecoverer` to route failed messages to `*.dlq` topics
 - Separate consumer groups per listener: `lifesync-streak-calculator`, `lifesync-analytics-updater`, `lifesync-telegram-notifier`
 
 **1.3 — Kafka event publisher (lifesync-infrastructure)**
 
-Create `KafkaHabitEventPublisher` implementing `HabitEventPublisher`:
+Create `KafkaHabitEventPublisher` (`@Component`):
 - Inject `KafkaTemplate<String, HabitCompletedEvent>`
 - `publish(HabitCompletedEvent event)`:
   - Partition key: `event.habitId().toString()`
@@ -248,17 +241,18 @@ Create `ProcessedEventRepository` in `ru.zahaand.lifesync.infrastructure.event`:
 
 Current: `CompleteHabitUseCase(HabitRepository, HabitLogRepository, HabitStreakRepository, StreakCalculatorService, Clock)`
 
-New: `CompleteHabitUseCase(HabitRepository, HabitLogRepository, HabitEventPublisher, Clock)`
+New: `CompleteHabitUseCase(HabitRepository, HabitLogRepository, ApplicationEventPublisher, Clock)`
 
 Changes:
 - Remove `HabitStreakRepository` and `StreakCalculatorService` dependencies
 - Remove `recalculateStreak()` private method entirely
+- Add `ApplicationEventPublisher` (Spring) dependency
 - After saving HabitLog, build and publish `HabitCompletedEvent`:
   ```java
   var event = new HabitCompletedEvent(
       UUID.randomUUID().toString(), habitId.value(), userId,
       logDate, saved.getId().value(), Instant.now(clock));
-  habitEventPublisher.publish(event);
+  applicationEventPublisher.publishEvent(event);
   ```
 - `@Transactional` remains for the DB write
 
@@ -273,14 +267,15 @@ This ensures Kafka never receives an event for data that was rolled back.
 
 Current: `DeleteHabitLogUseCase(HabitRepository, HabitLogRepository, HabitStreakRepository, StreakCalculatorService, Clock)`
 
-New: `DeleteHabitLogUseCase(HabitRepository, HabitLogRepository, HabitEventPublisher, Clock)`
+New: `DeleteHabitLogUseCase(HabitRepository, HabitLogRepository, ApplicationEventPublisher, Clock)`
 
-Same pattern: remove streak recalculation, publish `HabitCompletedEvent` after soft-delete so the streak consumer recalculates. The event semantically means "habit log state changed — recalculate streak."
+Same pattern: remove streak recalculation, publish `HabitCompletedEvent` via `applicationEventPublisher.publishEvent()` after soft-delete so the streak consumer recalculates. The event semantically means "habit log state changed — recalculate streak." The deleted log's ID is used as `completionId` — consumer logic handles both completion and deletion identically (recalculate from current logs).
 
 **2.3 — Update UseCaseConfig (lifesync-app)**
 
-- Update `completeHabitUseCase` bean: replace `HabitStreakRepository` + `StreakCalculatorService` with `HabitEventPublisher`
+- Update `completeHabitUseCase` bean: replace `HabitStreakRepository` + `StreakCalculatorService` with `ApplicationEventPublisher`
 - Update `deleteHabitLogUseCase` bean: same replacement
+- Also update `TestUseCaseConfig.java` — same constructor changes for both use case beans
 - `StreakCalculatorService` bean remains (used by `StreakCalculatorConsumer` and `UpdateHabitUseCase`)
 
 ### Phase 3: Kafka Consumers (lifesync-infrastructure)
@@ -330,7 +325,7 @@ Processing flow (placeholder per FR-005):
 
 Package: `ru.zahaand.lifesync.infrastructure.notification`
 
-Dependencies: `HabitStreakRepository`, `UserRepository`, `TelegramNotificationSender`, `ProcessedEventRepository`
+Dependencies: `HabitRepository`, `HabitLogRepository`, `StreakCalculatorService`, `UserRepository`, `TelegramNotificationSender`, `ProcessedEventRepository`
 
 ```java
 @KafkaListener(topics = "habit.log.completed",
@@ -339,10 +334,12 @@ Dependencies: `HabitStreakRepository`, `UserRepository`, `TelegramNotificationSe
 
 Milestone thresholds: `Set.of(7, 14, 21, 30, 60, 90)`
 
+**Design decision**: The TelegramNotificationConsumer recalculates the streak independently (injecting `HabitRepository`, `HabitLogRepository`, `StreakCalculatorService`) rather than reading from `habitStreakRepository`. Consumer groups are independent — no ordering guarantee between StreakCalculatorConsumer and this consumer. Independent calculation ensures correctness regardless of consumer ordering. Cost: duplicate calculation, but milestone check is infrequent.
+
 Processing flow:
 1. Log DEBUG: topic, partition, offset
 2. Idempotency check
-3. Fetch current streak from `habitStreakRepository`
+3. Recalculate streak independently (fetch habit, log dates, call `streakCalculatorService.calculate()`)
 4. Check if `currentStreak` is a milestone value
    - If not: log DEBUG "No milestone reached" → register + return
 5. Fetch user from `userRepository.findById()`
@@ -352,12 +349,6 @@ Processing flow:
 8. Call `telegramNotificationSender.send(chatId, message)`
 9. Register event as processed
 10. Log INFO: "Telegram milestone notification sent: userId={}, streak={}"
-
-**Important**: The consumer checks the streak **after** the StreakCalculatorConsumer has updated it. Since all three consumers are in different consumer groups, they may process the same event concurrently. The TelegramNotificationConsumer must read the streak from the DB (which may not be updated yet). To handle this:
-- Option A: Add a small delay or ordering guarantee
-- **Option B (chosen)**: The TelegramNotificationConsumer recalculates the streak independently (same as streak consumer) rather than reading from DB. This ensures correctness regardless of consumer ordering. Cost: duplicate calculation, but milestone check is infrequent.
-
-Revised approach: TelegramNotificationConsumer also injects `HabitRepository`, `HabitLogRepository`, `StreakCalculatorService` and calculates the streak itself. This is the safest approach given independent consumer groups.
 
 ### Phase 4: Telegram Adapter (lifesync-infrastructure)
 
@@ -494,6 +485,7 @@ End-to-end flow:
 |----------|-----------|
 | Single `HabitCompletedEvent` for both completion and log deletion | Both trigger streak recalculation. One event type simplifies consumer logic. The event means "habit log state changed." |
 | Fire-and-forget event publishing | FR-003: publishing failure must not block HTTP response. The DB write (habit log) is the source of truth. |
+| No `HabitEventPublisher` domain port | Use cases inject `ApplicationEventPublisher` (Spring) directly. `KafkaHabitEventPublisher` listens via `@TransactionalEventListener(AFTER_COMMIT)`. A domain port would be dead code — use cases never call it. |
 | Independent streak calculation in TelegramNotificationConsumer | Consumer groups are independent; no ordering guarantee between streak calculator and notifier. Recalculating in notifier ensures correctness. |
 | `consumer_group` column in `processed_events` | Same event processed by 3 different consumers — each needs its own idempotency record. |
 | Real Telegram adapter with config flag | Per spec clarification: not a stub. Full TelegramBots integration, disabled by default via `lifesync.telegram.enabled=false`. |

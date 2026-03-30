@@ -75,7 +75,7 @@
 - [ ] CHK052 - Do ALL 3 consumers log at INFO level upon successful processing with business context (habitId, userId, result)? [Constitution §VIII, Spec §FR-017]
 - [ ] CHK053 - Are sensitive data fields (tokens, passwords) excluded from all log statements? Events contain userId and habitId (acceptable), not tokens. [Constitution §VIII]
 - [ ] CHK054 - Are ALL domain event classes (`DomainEvent`, `HabitCompletedEvent`, `GoalProgressUpdatedEvent`) pure Java with NO Spring, jOOQ, Kafka, or Jackson imports? [Constitution §I]
-- [ ] CHK055 - Is the `HabitEventPublisher` port interface in `lifesync-domain` with NO Kafka-specific types in its signature? [Constitution §I]
+- [ ] CHK055 - N/A — `HabitEventPublisher` domain port removed. Use cases inject `ApplicationEventPublisher` (Spring) directly; `KafkaHabitEventPublisher` listens via `@TransactionalEventListener`. [Constitution §I, Plan §0.3]
 - [ ] CHK056 - Is the `TelegramNotificationSender` port interface in `lifesync-domain` with NO TelegramBots-specific types in its signature? [Constitution §I]
 - [ ] CHK057 - Are ALL Kafka infrastructure classes (`KafkaHabitEventPublisher`, consumers, `KafkaTopicConfig`, `KafkaConsumerConfig`) in `lifesync-infrastructure` module only? [Constitution §I]
 - [ ] CHK058 - Is `@Transactional` used ONLY in `lifesync-application` module use cases, NOT in consumers or infrastructure code? [Constitution §Dev Standards 11]

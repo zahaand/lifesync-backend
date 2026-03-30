@@ -2,16 +2,15 @@ package ru.zahaand.lifesync.infrastructure.user;
 
 import org.jooq.Condition;
 import org.jooq.DSLContext;
-import org.jooq.Field;
 import org.jooq.Record;
-import org.jooq.Table;
-import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 import ru.zahaand.lifesync.domain.user.Role;
 import ru.zahaand.lifesync.domain.user.User;
 import ru.zahaand.lifesync.domain.user.UserId;
 import ru.zahaand.lifesync.domain.user.UserProfile;
 import ru.zahaand.lifesync.domain.user.UserRepository;
+import ru.zahaand.lifesync.infrastructure.generated.tables.UserProfiles;
+import ru.zahaand.lifesync.infrastructure.generated.tables.Users;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -19,27 +18,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static ru.zahaand.lifesync.infrastructure.generated.Tables.USERS;
+import static ru.zahaand.lifesync.infrastructure.generated.Tables.USER_PROFILES;
+
 @Repository
 public class JooqUserRepository implements UserRepository {
-
-    private static final Table<?> USERS = DSL.table("users");
-    private static final Table<?> USER_PROFILES = DSL.table("user_profiles");
-
-    private static final Field<UUID> U_ID = DSL.field("users.id", UUID.class);
-    private static final Field<String> U_EMAIL = DSL.field("users.email", String.class);
-    private static final Field<String> U_USERNAME = DSL.field("users.username", String.class);
-    private static final Field<String> U_PASSWORD_HASH = DSL.field("users.password_hash", String.class);
-    private static final Field<String> U_ROLE = DSL.field("users.role", String.class);
-    private static final Field<Boolean> U_ENABLED = DSL.field("users.enabled", Boolean.class);
-    private static final Field<OffsetDateTime> U_CREATED_AT = DSL.field("users.created_at", OffsetDateTime.class);
-    private static final Field<OffsetDateTime> U_UPDATED_AT = DSL.field("users.updated_at", OffsetDateTime.class);
-    private static final Field<OffsetDateTime> U_DELETED_AT = DSL.field("users.deleted_at", OffsetDateTime.class);
-
-    private static final Field<UUID> P_USER_ID = DSL.field("user_profiles.user_id", UUID.class);
-    private static final Field<String> P_DISPLAY_NAME = DSL.field("user_profiles.display_name", String.class);
-    private static final Field<String> P_TIMEZONE = DSL.field("user_profiles.timezone", String.class);
-    private static final Field<String> P_LOCALE = DSL.field("user_profiles.locale", String.class);
-    private static final Field<String> P_TELEGRAM_CHAT_ID = DSL.field("user_profiles.telegram_chat_id", String.class);
 
     private final DSLContext dsl;
 
@@ -51,9 +34,9 @@ public class JooqUserRepository implements UserRepository {
     public Optional<User> findById(UserId id) {
         return dsl.select()
                 .from(USERS)
-                .leftJoin(USER_PROFILES).on(U_ID.eq(P_USER_ID))
-                .where(U_ID.eq(id.value()))
-                .and(U_DELETED_AT.isNull())
+                .leftJoin(USER_PROFILES).on(USERS.ID.eq(USER_PROFILES.USER_ID))
+                .where(USERS.ID.eq(id.value()))
+                .and(USERS.DELETED_AT.isNull())
                 .fetchOptional(this::mapToUser);
     }
 
@@ -61,9 +44,9 @@ public class JooqUserRepository implements UserRepository {
     public Optional<User> findByEmail(String email) {
         return dsl.select()
                 .from(USERS)
-                .leftJoin(USER_PROFILES).on(U_ID.eq(P_USER_ID))
-                .where(U_EMAIL.eq(email))
-                .and(U_DELETED_AT.isNull())
+                .leftJoin(USER_PROFILES).on(USERS.ID.eq(USER_PROFILES.USER_ID))
+                .where(USERS.EMAIL.eq(email))
+                .and(USERS.DELETED_AT.isNull())
                 .fetchOptional(this::mapToUser);
     }
 
@@ -71,9 +54,9 @@ public class JooqUserRepository implements UserRepository {
     public Optional<User> findByUsername(String username) {
         return dsl.select()
                 .from(USERS)
-                .leftJoin(USER_PROFILES).on(U_ID.eq(P_USER_ID))
-                .where(DSL.lower(U_USERNAME).eq(username.toLowerCase()))
-                .and(U_DELETED_AT.isNull())
+                .leftJoin(USER_PROFILES).on(USERS.ID.eq(USER_PROFILES.USER_ID))
+                .where(USERS.USERNAME.lower().eq(username.toLowerCase()))
+                .and(USERS.DELETED_AT.isNull())
                 .fetchOptional(this::mapToUser);
     }
 
@@ -82,8 +65,8 @@ public class JooqUserRepository implements UserRepository {
         return dsl.fetchExists(
                 dsl.selectOne()
                         .from(USERS)
-                        .where(U_EMAIL.eq(email))
-                        .and(U_DELETED_AT.isNull())
+                        .where(USERS.EMAIL.eq(email))
+                        .and(USERS.DELETED_AT.isNull())
         );
     }
 
@@ -92,8 +75,8 @@ public class JooqUserRepository implements UserRepository {
         return dsl.fetchExists(
                 dsl.selectOne()
                         .from(USERS)
-                        .where(DSL.lower(U_USERNAME).eq(username.toLowerCase()))
-                        .and(U_DELETED_AT.isNull())
+                        .where(USERS.USERNAME.lower().eq(username.toLowerCase()))
+                        .and(USERS.DELETED_AT.isNull())
         );
     }
 
@@ -103,26 +86,26 @@ public class JooqUserRepository implements UserRepository {
         OffsetDateTime now = user.getCreatedAt().atOffset(ZoneOffset.UTC);
 
         dsl.insertInto(USERS)
-                .set(U_ID, userId)
-                .set(U_EMAIL, user.getEmail())
-                .set(U_USERNAME, user.getUsername())
-                .set(U_PASSWORD_HASH, user.getPasswordHash())
-                .set(U_ROLE, user.getRole().name())
-                .set(U_ENABLED, user.isEnabled())
-                .set(U_CREATED_AT, now)
-                .set(U_UPDATED_AT, now)
+                .set(USERS.ID, userId)
+                .set(USERS.EMAIL, user.getEmail())
+                .set(USERS.USERNAME, user.getUsername())
+                .set(USERS.PASSWORD_HASH, user.getPasswordHash())
+                .set(USERS.ROLE, user.getRole().name())
+                .set(USERS.ENABLED, user.isEnabled())
+                .set(USERS.CREATED_AT, now)
+                .set(USERS.UPDATED_AT, now)
                 .execute();
 
         UserProfile profile = user.getProfile();
         dsl.insertInto(USER_PROFILES)
-                .set(DSL.field("user_profiles.id", UUID.class), UUID.randomUUID())
-                .set(P_USER_ID, userId)
-                .set(P_DISPLAY_NAME, profile.displayName())
-                .set(P_TIMEZONE, profile.timezone())
-                .set(P_LOCALE, profile.locale())
-                .set(P_TELEGRAM_CHAT_ID, profile.telegramChatId())
-                .set(DSL.field("user_profiles.created_at", OffsetDateTime.class), now)
-                .set(DSL.field("user_profiles.updated_at", OffsetDateTime.class), now)
+                .set(USER_PROFILES.ID, UUID.randomUUID())
+                .set(USER_PROFILES.USER_ID, userId)
+                .set(USER_PROFILES.DISPLAY_NAME, profile.displayName())
+                .set(USER_PROFILES.TIMEZONE, profile.timezone())
+                .set(USER_PROFILES.LOCALE, profile.locale())
+                .set(USER_PROFILES.TELEGRAM_CHAT_ID, profile.telegramChatId())
+                .set(USER_PROFILES.CREATED_AT, now)
+                .set(USER_PROFILES.UPDATED_AT, now)
                 .execute();
 
         return user;
@@ -133,26 +116,26 @@ public class JooqUserRepository implements UserRepository {
         OffsetDateTime updatedAt = user.getUpdatedAt().atOffset(ZoneOffset.UTC);
 
         dsl.update(USERS)
-                .set(U_EMAIL, user.getEmail())
-                .set(U_USERNAME, user.getUsername())
-                .set(U_PASSWORD_HASH, user.getPasswordHash())
-                .set(U_ROLE, user.getRole().name())
-                .set(U_ENABLED, user.isEnabled())
-                .set(U_UPDATED_AT, updatedAt)
-                .set(U_DELETED_AT, user.getDeletedAt() != null
+                .set(USERS.EMAIL, user.getEmail())
+                .set(USERS.USERNAME, user.getUsername())
+                .set(USERS.PASSWORD_HASH, user.getPasswordHash())
+                .set(USERS.ROLE, user.getRole().name())
+                .set(USERS.ENABLED, user.isEnabled())
+                .set(USERS.UPDATED_AT, updatedAt)
+                .set(USERS.DELETED_AT, user.getDeletedAt() != null
                         ? user.getDeletedAt().atOffset(ZoneOffset.UTC)
                         : null)
-                .where(U_ID.eq(user.getId().value()))
+                .where(USERS.ID.eq(user.getId().value()))
                 .execute();
 
         UserProfile profile = user.getProfile();
         dsl.update(USER_PROFILES)
-                .set(P_DISPLAY_NAME, profile.displayName())
-                .set(P_TIMEZONE, profile.timezone())
-                .set(P_LOCALE, profile.locale())
-                .set(P_TELEGRAM_CHAT_ID, profile.telegramChatId())
-                .set(DSL.field("user_profiles.updated_at", OffsetDateTime.class), updatedAt)
-                .where(P_USER_ID.eq(user.getId().value()))
+                .set(USER_PROFILES.DISPLAY_NAME, profile.displayName())
+                .set(USER_PROFILES.TIMEZONE, profile.timezone())
+                .set(USER_PROFILES.LOCALE, profile.locale())
+                .set(USER_PROFILES.TELEGRAM_CHAT_ID, profile.telegramChatId())
+                .set(USER_PROFILES.UPDATED_AT, updatedAt)
+                .where(USER_PROFILES.USER_ID.eq(user.getId().value()))
                 .execute();
 
         return user;
@@ -160,13 +143,13 @@ public class JooqUserRepository implements UserRepository {
 
     @Override
     public UserPage findAll(String status, String search, int page, int size) {
-        Condition condition = DSL.trueCondition();
+        Condition condition = org.jooq.impl.DSL.trueCondition();
 
         if (status != null) {
             condition = switch (status) {
-                case "active" -> condition.and(U_ENABLED.isTrue()).and(U_DELETED_AT.isNull());
-                case "banned" -> condition.and(U_ENABLED.isFalse()).and(U_DELETED_AT.isNull());
-                case "deleted" -> condition.and(U_DELETED_AT.isNotNull());
+                case "active" -> condition.and(USERS.ENABLED.isTrue()).and(USERS.DELETED_AT.isNull());
+                case "banned" -> condition.and(USERS.ENABLED.isFalse()).and(USERS.DELETED_AT.isNull());
+                case "deleted" -> condition.and(USERS.DELETED_AT.isNotNull());
                 default -> condition;
             };
         }
@@ -174,8 +157,8 @@ public class JooqUserRepository implements UserRepository {
         if (search != null && !search.isBlank()) {
             String pattern = "%" + search.toLowerCase() + "%";
             condition = condition.and(
-                    DSL.lower(U_EMAIL).like(pattern)
-                            .or(DSL.lower(U_USERNAME).like(pattern))
+                    USERS.EMAIL.lower().like(pattern)
+                            .or(USERS.USERNAME.lower().like(pattern))
             );
         }
 
@@ -188,9 +171,9 @@ public class JooqUserRepository implements UserRepository {
 
         List<User> content = dsl.select()
                 .from(USERS)
-                .leftJoin(USER_PROFILES).on(U_ID.eq(P_USER_ID))
+                .leftJoin(USER_PROFILES).on(USERS.ID.eq(USER_PROFILES.USER_ID))
                 .where(condition)
-                .orderBy(U_CREATED_AT.desc())
+                .orderBy(USERS.CREATED_AT.desc())
                 .limit(size)
                 .offset(page * size)
                 .fetch(this::mapToUser);
@@ -199,25 +182,25 @@ public class JooqUserRepository implements UserRepository {
     }
 
     private User mapToUser(Record record) {
-        UserId userId = new UserId(record.get(U_ID));
+        UserId userId = new UserId(record.get(USERS.ID));
         UserProfile profile = new UserProfile(
-                record.get(P_DISPLAY_NAME),
-                record.get(P_TIMEZONE),
-                record.get(P_LOCALE),
-                record.get(P_TELEGRAM_CHAT_ID)
+                record.get(USER_PROFILES.DISPLAY_NAME),
+                record.get(USER_PROFILES.TIMEZONE),
+                record.get(USER_PROFILES.LOCALE),
+                record.get(USER_PROFILES.TELEGRAM_CHAT_ID)
         );
 
-        OffsetDateTime deletedAt = record.get(U_DELETED_AT);
+        OffsetDateTime deletedAt = record.get(USERS.DELETED_AT);
 
         return new User(
                 userId,
-                record.get(U_EMAIL),
-                record.get(U_USERNAME),
-                record.get(U_PASSWORD_HASH),
-                Role.valueOf(record.get(U_ROLE)),
-                record.get(U_ENABLED),
-                record.get(U_CREATED_AT).toInstant(),
-                record.get(U_UPDATED_AT).toInstant(),
+                record.get(USERS.EMAIL),
+                record.get(USERS.USERNAME),
+                record.get(USERS.PASSWORD_HASH),
+                Role.valueOf(record.get(USERS.ROLE)),
+                record.get(USERS.ENABLED),
+                record.get(USERS.CREATED_AT).toInstant(),
+                record.get(USERS.UPDATED_AT).toInstant(),
                 deletedAt != null ? deletedAt.toInstant() : null,
                 profile
         );

@@ -24,4 +24,7 @@
     <include file="db/changelog/user/V13__add_telegram_to_profiles.xml"/>
     <include file="db/changelog/user/V14__add_username_case_insensitive_index.xml"/>
 
+    <include file="db/changelog/habit/V15__add_target_days_of_week_to_habits.xml"/>
+    <include file="db/changelog/habit/V16__add_reminder_time_to_habits.xml"/>
+
 </databaseChangeLog>

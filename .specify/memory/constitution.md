@@ -108,6 +108,21 @@
   Removed sections: none.
   Templates requiring updates: none.
   Follow-up TODOs: none.
+
+  Version change: 1.2.3 → 1.2.4
+  Bump rationale: PATCH — clarification of branch naming convention.
+                  Distinguishes SDD sprint branches from technical/fix branches
+                  to prevent numbering gaps in sprint sequence.
+
+  Modified sections:
+    - Development Standards, rule 7: added branch naming convention block
+      (Spec Kit sprint branches use {NNN}-{feature-slug}, technical/fix
+      branches use {type}/{short-description}).
+
+  Added sections: none.
+  Removed sections: none.
+  Templates requiring updates: none.
+  Follow-up TODOs: none.
 -->
 
 # LifeSync Backend Constitution
@@ -296,6 +311,14 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
    - During implementation: one commit per task or logical group of related files.
    - Never commit unrelated changes together.
    - Never accumulate all sprint work into a single commit.
+   Branch naming convention:
+   - Spec Kit sprint branches: `{NNN}-{feature-slug}`
+     (e.g. `001-foundation-infra`, `002-auth-user-mgmt`).
+     Numbers are sequential per sprint only.
+   - Technical/fix branches (no SDD cycle): `{type}/{short-description}`
+     (e.g. `fix/circular-dependency`, `chore/local-dev-setup`,
+     `hotfix/token-expiry`).
+   - Never use sprint numbers for non-SDD branches to avoid numbering gaps.
 8. API change = YAML change first. PR without YAML update is PROHIBITED.
 9. Kafka topic/event changes: atomic PR (producers + consumers together).
 10. Kafka consumers: check `processed_events` for idempotency.
@@ -318,4 +341,4 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
 **Compliance**: Claude Code and all reviews MUST verify Core Principles.
 Violations logged in `plan.md` Complexity Tracking with justification.
 
-**Version**: 1.2.3 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27
+**Version**: 1.2.4 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27

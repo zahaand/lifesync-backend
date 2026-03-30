@@ -76,6 +76,23 @@
   Removed sections: none.
   Templates requiring updates: none.
   Follow-up TODOs: none.
+
+  Version change: 1.2.1 → 1.2.2
+  Bump rationale: PATCH — clarification of existing rule in Core Principles IX
+                  (member order). Original wording "dependencies → helpers →
+                  constants → constructors → methods" was ambiguous about static
+                  vs instance field ordering. Replaced with explicit ordering
+                  aligned to standard Java convention: statics first, then instance.
+
+  Modified principles:
+    - IX. Code Style: member order rule clarified to
+      "static fields (Logger, constants) → instance fields (dependencies) →
+       constructors → methods."
+
+  Added sections: none.
+  Removed sections: none.
+  Templates requiring updates: none.
+  Follow-up TODOs: none.
 -->
 
 # LifeSync Backend Constitution
@@ -168,7 +185,7 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
 
 ### IX. Code Style (NON-NEGOTIABLE)
 
-- Member order: dependencies → helpers → constants → constructors → methods.
+- Member order: static fields (Logger, constants) → instance fields (dependencies) → constructors → methods.
 - All fields final. Constructor injection only. No `@Autowired` on fields.
 - All constructors explicit. No more than 1 consecutive blank line.
 - No null from public methods — use `Optional` or throw.
@@ -281,4 +298,4 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
 **Compliance**: Claude Code and all reviews MUST verify Core Principles.
 Violations logged in `plan.md` Complexity Tracking with justification.
 
-**Version**: 1.2.1 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27
+**Version**: 1.2.2 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27

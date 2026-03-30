@@ -9,10 +9,7 @@ import ru.zahaand.lifesync.application.user.*;
 import ru.zahaand.lifesync.domain.habit.HabitLogRepository;
 import ru.zahaand.lifesync.domain.habit.HabitRepository;
 import ru.zahaand.lifesync.domain.habit.HabitStreakRepository;
-import ru.zahaand.lifesync.domain.user.PasswordEncoder;
-import ru.zahaand.lifesync.domain.user.RefreshTokenRepository;
-import ru.zahaand.lifesync.domain.user.TokenProvider;
-import ru.zahaand.lifesync.domain.user.UserRepository;
+import ru.zahaand.lifesync.domain.user.*;
 
 import java.time.Clock;
 
@@ -161,5 +158,10 @@ public class TestUseCaseConfig {
     public GetHabitStreakUseCase getHabitStreakUseCase(HabitRepository habitRepository,
                                                        HabitStreakRepository habitStreakRepository) {
         return new GetHabitStreakUseCase(habitRepository, habitStreakRepository);
+    }
+
+    @Bean
+    public TelegramNotificationSender telegramNotificationSender() {
+        return (chatId, message) -> { };
     }
 }

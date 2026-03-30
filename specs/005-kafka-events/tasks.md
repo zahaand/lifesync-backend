@@ -211,7 +211,7 @@
 
 ## Phase 3: Kafka Consumers (6 tasks)
 
-- [ ] T021 — Create `StreakCalculatorConsumer`
+- [x] T021 — Create `StreakCalculatorConsumer`
   - File: `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/habit/StreakCalculatorConsumer.java`
   - `@KafkaListener(topics = "habit.log.completed", groupId = "lifesync-streak-calculator")`
   - Dependencies: `HabitRepository`, `HabitLogRepository`, `HabitStreakRepository`, `StreakCalculatorService`, `ProcessedEventRepository`
@@ -231,7 +231,7 @@
   - Depends: T003, T008, T009, T012, T013
   - Ref: Plan §3.1, Spec §FR-004/FR-008/FR-009/FR-016/FR-017
 
-- [ ] T022 — Create `StreakCalculatorConsumerTest`
+- [x] T022 — Create `StreakCalculatorConsumerTest`
   - File: `lifesync-infrastructure/src/test/java/ru/zahaand/lifesync/infrastructure/habit/StreakCalculatorConsumerTest.java`
   - `@ExtendWith(MockitoExtension.class)` — no Spring context
   - `@Nested` per method, `@DisplayName` first on every test
@@ -246,7 +246,7 @@
   - Depends: T021
   - Ref: Plan §6.3
 
-- [ ] T023 — Create `AnalyticsUpdaterConsumer`
+- [x] T023 — Create `AnalyticsUpdaterConsumer`
   - File: `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/habit/AnalyticsUpdaterConsumer.java`
   - `@KafkaListener(topics = "habit.log.completed", groupId = "lifesync-analytics-updater")`
   - Dependencies: `ProcessedEventRepository`
@@ -260,7 +260,7 @@
   - Depends: T008, T009, T013
   - Ref: Plan §3.2, Spec §FR-005
 
-- [ ] T024 — Create `AnalyticsUpdaterConsumerTest`
+- [x] T024 — Create `AnalyticsUpdaterConsumerTest`
   - File: `lifesync-infrastructure/src/test/java/ru/zahaand/lifesync/infrastructure/habit/AnalyticsUpdaterConsumerTest.java`
   - `@ExtendWith(MockitoExtension.class)`, `@Nested` per method, `@DisplayName` first
   - Tests:
@@ -271,7 +271,7 @@
   - Depends: T023
   - Ref: Plan §6.4
 
-- [ ] T025 — Create `TelegramNotificationConsumer`
+- [x] T025 — Create `TelegramNotificationConsumer`
   - File: `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/TelegramNotificationConsumer.java`
   - `@KafkaListener(topics = "habit.log.completed", groupId = "lifesync-telegram-notifier")`
   - Dependencies: `HabitRepository`, `HabitLogRepository`, `StreakCalculatorService`, `UserRepository`, `TelegramNotificationSender`, `ProcessedEventRepository`
@@ -295,7 +295,7 @@
   - Depends: T007, T008, T009, T013
   - Ref: Plan §3.3, Spec §FR-006/FR-007
 
-- [ ] T026 — Create `TelegramNotificationConsumerTest`
+- [x] T026 — Create `TelegramNotificationConsumerTest`
   - File: `lifesync-infrastructure/src/test/java/ru/zahaand/lifesync/infrastructure/notification/TelegramNotificationConsumerTest.java`
   - `@ExtendWith(MockitoExtension.class)`, `@Nested` per method, `@DisplayName` first
   - Tests:

@@ -960,12 +960,16 @@ components:
         frequency:
           type: string
           enum: [DAILY, WEEKLY, CUSTOM]
+          example: CUSTOM
         targetDaysOfWeek:
           type: array
           items:
             $ref: '#/components/schemas/DayOfWeekDto'
           description: Required when frequency is CUSTOM
-          example: [MONDAY, WEDNESDAY, FRIDAY]
+          example:
+            - MONDAY
+            - WEDNESDAY
+            - FRIDAY
         reminderTime:
           type: string
           pattern: '^\d{2}:\d{2}$'

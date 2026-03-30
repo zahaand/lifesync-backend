@@ -93,6 +93,21 @@
   Removed sections: none.
   Templates requiring updates: none.
   Follow-up TODOs: none.
+
+  Version change: 1.2.2 → 1.2.3
+  Bump rationale: PATCH — clarification of existing Development Standards
+                  rule 7 (Commits). Added commit granularity rules for
+                  atomic commits per User Story and task-level grouping.
+
+  Modified sections:
+    - Development Standards, rule 7: added commit granularity block
+      (one commit per story checkpoint, one per task/logical group,
+      no unrelated changes together, no single-commit sprint dumps).
+
+  Added sections: none.
+  Removed sections: none.
+  Templates requiring updates: none.
+  Follow-up TODOs: none.
 -->
 
 # LifeSync Backend Constitution
@@ -276,6 +291,11 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
    `feat(auth): Реализовать JWT аутентификацию`
    `ci: Настроить GitHub Actions pipeline`
    `fix(habits): Исправить расчёт streak при пропуске дня`
+   Commit granularity:
+   - One commit per User Story completion (at story checkpoint).
+   - During implementation: one commit per task or logical group of related files.
+   - Never commit unrelated changes together.
+   - Never accumulate all sprint work into a single commit.
 8. API change = YAML change first. PR without YAML update is PROHIBITED.
 9. Kafka topic/event changes: atomic PR (producers + consumers together).
 10. Kafka consumers: check `processed_events` for idempotency.
@@ -298,4 +318,4 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
 **Compliance**: Claude Code and all reviews MUST verify Core Principles.
 Violations logged in `plan.md` Complexity Tracking with justification.
 
-**Version**: 1.2.2 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27
+**Version**: 1.2.3 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27

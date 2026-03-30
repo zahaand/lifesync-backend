@@ -118,13 +118,13 @@ lifesync-web/
         ├── AuthController.java          # Implements generated AuthApi interface
         ├── UserController.java          # Implements generated UserApi interface
         ├── AdminController.java         # Implements generated AdminApi interface
+        ├── JwtAuthenticationFilter.java # OncePerRequestFilter: extract + validate + SecurityContext
         └── GlobalExceptionHandler.java
 
 lifesync-app/
 ├── src/main/java/ru/zahaand/lifesync/app/
 │   └── config/
 │       ├── SecurityConfig.java          # (modify existing) JWT filter chain, role-based rules
-│       ├── JwtAuthenticationFilter.java # OncePerRequestFilter: extract + validate + SecurityContext
 │       └── OpenApiConfig.java           # SpringDoc: bearer auth scheme, API info
 └── src/main/resources/
     └── application.yml                  # (modify existing) add JWT config properties
@@ -176,8 +176,8 @@ lifesync-app/
 
 ### D7: Banned User Enforcement
 
-**Decision**: Check `enabled` flag in JwtAuthenticationFilter on every authenticated request. If user is banned (enabled=false), reject with 403 Forbidden immediately.
-**Rationale**: This ensures banned users are blocked within the max 15-minute access token window, not just at the next login. The check adds one DB lookup per request (can be cached with Caffeine in future sprints).
+**Decision**: Banned user check is deferred from JwtAuthenticationFilter. Banned users lose access within ≤15 minutes via access token expiry. Refresh token is revoked immediately on ban (BanUserUseCase). Full request-level check deferred to Sprint 7.
+**Rationale**: Adding a DB lookup on every authenticated request is premature for current scale. The 15-minute access token window is an acceptable trade-off. BanUserUseCase already revokes all refresh tokens, ensuring no new access tokens can be obtained. A per-request check with Caffeine cache can be added in Sprint 7 (Observability) when caching infrastructure is in place.
 
 ### D8: SpringDoc OpenAPI Integration
 
@@ -223,7 +223,6 @@ lifesync-app/
 
 ### lifesync-app/pom.xml
 
-- Add: nimbus-jose-jwt (for JwtAuthenticationFilter key loading)
 - Add: testcontainers + testcontainers-postgresql + testcontainers-junit-jupiter (test scope)
 
 ## Implementation Phases

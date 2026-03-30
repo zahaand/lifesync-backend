@@ -6,10 +6,6 @@ info:
   contact:
     name: zahaand
 
-servers:
-  - url: /api/v1
-    description: Default server
-
 security: []
 
 tags:

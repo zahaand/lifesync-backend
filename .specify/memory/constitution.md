@@ -124,19 +124,18 @@
   Templates requiring updates: none.
   Follow-up TODOs: none.
 
-  Version change: 1.2.4 → 1.3.0
-  Bump rationale: MINOR — new Core Principle XII added (OpenAPI Documentation
-                  Standards). Enforces portfolio-quality API documentation in
-                  Swagger UI for external developers.
+  Version change: 1.2.4 → 1.2.5
+  Bump rationale: PATCH — new execution rule added to Development Standards
+                  rule 7 (Commits). Prevents context loss and quality
+                  degradation from oversized implement runs by enforcing
+                  atomic phase-by-phase execution with verification.
 
-  Modified principles: none.
+  Modified sections:
+    - Development Standards, rule 7: added implementation execution rules
+      block (max 15 tasks per /speckit.implement run, one phase at a time,
+      verify + mark + commit after each phase).
 
-  Added sections:
-    - Core Principles: XII. OpenAPI Documentation Standards — requires summary,
-      multi-line description with business rules and how-to-test instructions,
-      named examples with real data, explanatory error responses, and field
-      descriptions on every schema field.
-
+  Added sections: none.
   Removed sections: none.
   Templates requiring updates: none.
   Follow-up TODOs: none.
@@ -268,28 +267,6 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
   `chore: Удалить scaffolding Spring Initializr`
   `fix: Исправить зависимости модуля lifesync-web`
 
-### XII. OpenAPI Documentation Standards (NON-NEGOTIABLE)
-
-Every endpoint in lifesync-api.yaml MUST have:
-- `summary`: one short line describing what the endpoint does.
-- `description`: multi-line block containing:
-  - What the endpoint does and business rules.
-  - Edge cases and error conditions with explanations.
-  - Step-by-step "How to test" instructions.
-- Request body: named `examples` with real data covering main use cases
-  (minimum 1 example, 2+ for endpoints with variants).
-- Error responses: each error code MUST explain WHY it occurs,
-  not just restate the HTTP status.
-
-Every schema field MUST have a `description` explaining what it means.
-Generic descriptions like "The field value" are PROHIBITED.
-
-The API info block MUST contain a top-level usage guide explaining
-how to authenticate and use the API step by step.
-
-After any endpoint or schema change, descriptions and examples
-MUST be updated to reflect the new behavior before committing.
-
 ## Technology Stack
 
 | Concern | Choice |
@@ -358,6 +335,12 @@ MUST be updated to reflect the new behavior before committing.
      (e.g. `fix/circular-dependency`, `chore/local-dev-setup`,
      `hotfix/token-expiry`).
    - Never use sprint numbers for non-SDD branches to avoid numbering gaps.
+   Implementation execution rules:
+   - NEVER run /speckit.implement on an entire sprint at once.
+   - Run /speckit.implement on ONE phase at a time (max 15 tasks per run).
+   - After each phase: verify build passes, mark tasks [x], commit.
+   - Phase boundary = natural checkpoint in tasks.md.
+   - If a phase has >15 tasks, split it into sub-phases.
 8. API change = YAML change first. PR without YAML update is PROHIBITED.
 9. Kafka topic/event changes: atomic PR (producers + consumers together).
 10. Kafka consumers: check `processed_events` for idempotency.
@@ -380,4 +363,4 @@ MUST be updated to reflect the new behavior before committing.
 **Compliance**: Claude Code and all reviews MUST verify Core Principles.
 Violations logged in `plan.md` Complexity Tracking with justification.
 
-**Version**: 1.3.0 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-30
+**Version**: 1.2.5 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-30

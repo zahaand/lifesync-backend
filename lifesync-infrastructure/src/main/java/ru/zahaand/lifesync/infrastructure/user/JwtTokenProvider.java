@@ -1,10 +1,6 @@
 package ru.zahaand.lifesync.infrastructure.user;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.JWK;
@@ -14,6 +10,9 @@ import com.nimbusds.jwt.SignedJWT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import ru.zahaand.lifesync.domain.user.Role;
 import ru.zahaand.lifesync.domain.user.TokenProvider;
@@ -21,6 +20,8 @@ import ru.zahaand.lifesync.domain.user.User;
 import ru.zahaand.lifesync.domain.user.UserId;
 import ru.zahaand.lifesync.domain.user.exception.InvalidTokenException;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -50,11 +51,14 @@ public class JwtTokenProvider implements TokenProvider {
                             @Value("${jwt.access-token-expiry}") long accessTokenExpiry,
                             Clock clock) {
         try {
-            JWK privateJwk = JWK.parseFromPEMEncodedObjects(privateKeyPem);
+            String resolvedPrivateKey = resolveKeyValue(privateKeyPem);
+            String resolvedPublicKey = resolveKeyValue(publicKeyPem);
+
+            JWK privateJwk = JWK.parseFromPEMEncodedObjects(resolvedPrivateKey);
             RSAKey rsaKey = privateJwk.toRSAKey();
             this.signer = new RSASSASigner(rsaKey);
 
-            JWK publicJwk = JWK.parseFromPEMEncodedObjects(publicKeyPem);
+            JWK publicJwk = JWK.parseFromPEMEncodedObjects(resolvedPublicKey);
             RSAPublicKey rsaPublicKey = publicJwk.toRSAKey().toRSAPublicKey();
             this.verifier = new RSASSAVerifier(rsaPublicKey);
         } catch (Exception e) {
@@ -117,6 +121,19 @@ public class JwtTokenProvider implements TokenProvider {
         } catch (ParseException | JOSEException e) {
             throw new InvalidTokenException("Invalid token: " + e.getMessage());
         }
+    }
+
+    private static String resolveKeyValue(String value) {
+        ResourceLoader resourceLoader = new DefaultResourceLoader();
+        Resource resource = resourceLoader.getResource(value);
+        if (resource.exists()) {
+            try (InputStream is = resource.getInputStream()) {
+                return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to read key resource: " + value, e);
+            }
+        }
+        return value;
     }
 
     private String computeSha256(String input) {

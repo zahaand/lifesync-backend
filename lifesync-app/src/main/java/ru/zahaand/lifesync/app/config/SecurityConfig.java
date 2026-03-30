@@ -10,8 +10,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import ru.zahaand.lifesync.domain.user.TokenProvider;
 import ru.zahaand.lifesync.web.user.JwtAuthenticationFilter;
 
-import java.time.Clock;
-
 @Configuration
 public class SecurityConfig {
 
@@ -37,10 +35,5 @@ public class SecurityConfig {
                 .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
-    }
-
-    @Bean
-    public Clock clock() {
-        return Clock.systemUTC();
     }
 }

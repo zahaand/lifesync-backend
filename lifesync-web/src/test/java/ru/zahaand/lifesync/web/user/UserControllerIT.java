@@ -37,7 +37,7 @@ class UserControllerIT extends BaseIT {
         void shouldReturnProfile() throws Exception {
             String token = registerAndLogin("profile_view@example.com", "profile_view", "SecurePass1");
 
-            mockMvc.perform(get("/users/me")
+            mockMvc.perform(get("/api/v1/users/me")
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.email").value("profile_view@example.com"))
@@ -47,7 +47,7 @@ class UserControllerIT extends BaseIT {
         @Test
         @DisplayName("Should return 401 without token")
         void shouldReturn401WithoutToken() throws Exception {
-            mockMvc.perform(get("/users/me"))
+            mockMvc.perform(get("/api/v1/users/me"))
                     .andExpect(status().isUnauthorized());
         }
     }
@@ -64,7 +64,7 @@ class UserControllerIT extends BaseIT {
                     .displayName("Updated Name")
                     .timezone("Europe/London");
 
-            mockMvc.perform(patch("/users/me")
+            mockMvc.perform(patch("/api/v1/users/me")
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -81,7 +81,7 @@ class UserControllerIT extends BaseIT {
             UpdateProfileRequestDto request = new UpdateProfileRequestDto()
                     .timezone("Invalid/Zone");
 
-            mockMvc.perform(patch("/users/me")
+            mockMvc.perform(patch("/api/v1/users/me")
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -100,7 +100,7 @@ class UserControllerIT extends BaseIT {
             ConnectTelegramRequestDto request = new ConnectTelegramRequestDto()
                     .telegramChatId("123456789");
 
-            mockMvc.perform(put("/users/me/telegram")
+            mockMvc.perform(put("/api/v1/users/me/telegram")
                             .header("Authorization", "Bearer " + token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
@@ -117,7 +117,7 @@ class UserControllerIT extends BaseIT {
         void shouldDeleteAccount() throws Exception {
             String token = registerAndLogin("del_user@example.com", "del_user", "SecurePass1");
 
-            mockMvc.perform(delete("/users/me")
+            mockMvc.perform(delete("/api/v1/users/me")
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isNoContent());
         }
@@ -129,7 +129,7 @@ class UserControllerIT extends BaseIT {
                 .username(username)
                 .password(password);
 
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isCreated());
@@ -138,7 +138,7 @@ class UserControllerIT extends BaseIT {
                 .identifier(email)
                 .password(password);
 
-        String response = mockMvc.perform(post("/auth/login")
+        String response = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())

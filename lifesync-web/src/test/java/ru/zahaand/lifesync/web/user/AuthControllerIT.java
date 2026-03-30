@@ -37,7 +37,7 @@ class AuthControllerIT extends BaseIT {
                     .username("new_user")
                     .password("SecurePass1");
 
-            mockMvc.perform(post("/auth/register")
+            mockMvc.perform(post("/api/v1/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -55,7 +55,7 @@ class AuthControllerIT extends BaseIT {
                     .username("dup_user1")
                     .password("SecurePass1");
 
-            mockMvc.perform(post("/auth/register")
+            mockMvc.perform(post("/api/v1/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated());
@@ -65,7 +65,7 @@ class AuthControllerIT extends BaseIT {
                     .username("dup_user2")
                     .password("SecurePass1");
 
-            mockMvc.perform(post("/auth/register")
+            mockMvc.perform(post("/api/v1/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(duplicate)))
                     .andExpect(status().isConflict());
@@ -79,7 +79,7 @@ class AuthControllerIT extends BaseIT {
                     .username("valid_user")
                     .password("SecurePass1");
 
-            mockMvc.perform(post("/auth/register")
+            mockMvc.perform(post("/api/v1/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -98,7 +98,7 @@ class AuthControllerIT extends BaseIT {
                     .identifier("login_email@example.com")
                     .password("SecurePass1");
 
-            mockMvc.perform(post("/auth/login")
+            mockMvc.perform(post("/api/v1/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -116,7 +116,7 @@ class AuthControllerIT extends BaseIT {
                     .identifier("login_uname")
                     .password("SecurePass1");
 
-            mockMvc.perform(post("/auth/login")
+            mockMvc.perform(post("/api/v1/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -132,7 +132,7 @@ class AuthControllerIT extends BaseIT {
                     .identifier("login_fail@example.com")
                     .password("WrongPass1");
 
-            mockMvc.perform(post("/auth/login")
+            mockMvc.perform(post("/api/v1/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnauthorized());
@@ -151,7 +151,7 @@ class AuthControllerIT extends BaseIT {
             RefreshRequestDto request = new RefreshRequestDto()
                     .refreshToken(refreshToken);
 
-            mockMvc.perform(post("/auth/refresh")
+            mockMvc.perform(post("/api/v1/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -167,13 +167,13 @@ class AuthControllerIT extends BaseIT {
 
             // Use it once (rotation)
             RefreshRequestDto request = new RefreshRequestDto().refreshToken(refreshToken);
-            mockMvc.perform(post("/auth/refresh")
+            mockMvc.perform(post("/api/v1/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());
 
             // Try again with the old token — should be revoked
-            mockMvc.perform(post("/auth/refresh")
+            mockMvc.perform(post("/api/v1/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnauthorized());
@@ -192,14 +192,14 @@ class AuthControllerIT extends BaseIT {
             LogoutRequestDto request = new LogoutRequestDto()
                     .refreshToken(refreshToken);
 
-            mockMvc.perform(post("/auth/logout")
+            mockMvc.perform(post("/api/v1/auth/logout")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNoContent());
 
             // Verify token is revoked
             RefreshRequestDto refreshRequest = new RefreshRequestDto().refreshToken(refreshToken);
-            mockMvc.perform(post("/auth/refresh")
+            mockMvc.perform(post("/api/v1/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(refreshRequest)))
                     .andExpect(status().isUnauthorized());
@@ -212,7 +212,7 @@ class AuthControllerIT extends BaseIT {
                 .username(username)
                 .password(password);
 
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
@@ -223,7 +223,7 @@ class AuthControllerIT extends BaseIT {
                 .identifier(identifier)
                 .password(password);
 
-        String response = mockMvc.perform(post("/auth/login")
+        String response = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())

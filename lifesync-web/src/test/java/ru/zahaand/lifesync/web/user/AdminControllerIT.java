@@ -40,7 +40,7 @@ class AdminControllerIT extends BaseIT {
         void shouldListUsersAsAdmin() throws Exception {
             String adminToken = createAdminAndLogin();
 
-            mockMvc.perform(get("/admin/users")
+            mockMvc.perform(get("/api/v1/admin/users")
                             .header("Authorization", "Bearer " + adminToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content").isArray())
@@ -52,7 +52,7 @@ class AdminControllerIT extends BaseIT {
         void shouldReturn403ForNonAdmin() throws Exception {
             String userToken = registerAndLogin("nonadmin@example.com", "nonadmin_user", "SecurePass1");
 
-            mockMvc.perform(get("/admin/users")
+            mockMvc.perform(get("/api/v1/admin/users")
                             .header("Authorization", "Bearer " + userToken))
                     .andExpect(status().isForbidden());
         }
@@ -67,7 +67,7 @@ class AdminControllerIT extends BaseIT {
             String adminToken = createAdminAndLogin();
             UUID userId = registerAndGetId("viewuser@example.com", "view_user", "SecurePass1");
 
-            mockMvc.perform(get("/admin/users/" + userId)
+            mockMvc.perform(get("/api/v1/admin/users/" + userId)
                             .header("Authorization", "Bearer " + adminToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(userId.toString()));
@@ -78,7 +78,7 @@ class AdminControllerIT extends BaseIT {
         void shouldReturn404ForNonexistent() throws Exception {
             String adminToken = createAdminAndLogin();
 
-            mockMvc.perform(get("/admin/users/" + UUID.randomUUID())
+            mockMvc.perform(get("/api/v1/admin/users/" + UUID.randomUUID())
                             .header("Authorization", "Bearer " + adminToken))
                     .andExpect(status().isNotFound());
         }
@@ -93,7 +93,7 @@ class AdminControllerIT extends BaseIT {
             String adminToken = createAdminAndLogin();
             UUID userId = registerAndGetId("banme@example.com", "ban_me", "SecurePass1");
 
-            mockMvc.perform(post("/admin/users/" + userId + "/ban")
+            mockMvc.perform(post("/api/v1/admin/users/" + userId + "/ban")
                             .header("Authorization", "Bearer " + adminToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.enabled").value(false));
@@ -104,7 +104,7 @@ class AdminControllerIT extends BaseIT {
         void shouldReturn404WhenBanningNonexistent() throws Exception {
             String adminToken = createAdminAndLogin();
 
-            mockMvc.perform(post("/admin/users/" + UUID.randomUUID() + "/ban")
+            mockMvc.perform(post("/api/v1/admin/users/" + UUID.randomUUID() + "/ban")
                             .header("Authorization", "Bearer " + adminToken))
                     .andExpect(status().isNotFound());
         }
@@ -131,7 +131,7 @@ class AdminControllerIT extends BaseIT {
                 .username(username)
                 .password(password);
 
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
@@ -148,7 +148,7 @@ class AdminControllerIT extends BaseIT {
                 .username(username)
                 .password(password);
 
-        String response = mockMvc.perform(post("/auth/register")
+        String response = mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -164,7 +164,7 @@ class AdminControllerIT extends BaseIT {
                 .identifier(email)
                 .password(password);
 
-        String response = mockMvc.perform(post("/auth/login")
+        String response = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())

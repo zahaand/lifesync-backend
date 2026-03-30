@@ -123,6 +123,23 @@
   Removed sections: none.
   Templates requiring updates: none.
   Follow-up TODOs: none.
+
+  Version change: 1.2.4 → 1.3.0
+  Bump rationale: MINOR — new Core Principle XII added (OpenAPI Documentation
+                  Standards). Enforces portfolio-quality API documentation in
+                  Swagger UI for external developers.
+
+  Modified principles: none.
+
+  Added sections:
+    - Core Principles: XII. OpenAPI Documentation Standards — requires summary,
+      multi-line description with business rules and how-to-test instructions,
+      named examples with real data, explanatory error responses, and field
+      descriptions on every schema field.
+
+  Removed sections: none.
+  Templates requiring updates: none.
+  Follow-up TODOs: none.
 -->
 
 # LifeSync Backend Constitution
@@ -251,6 +268,28 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
   `chore: Удалить scaffolding Spring Initializr`
   `fix: Исправить зависимости модуля lifesync-web`
 
+### XII. OpenAPI Documentation Standards (NON-NEGOTIABLE)
+
+Every endpoint in lifesync-api.yaml MUST have:
+- `summary`: one short line describing what the endpoint does.
+- `description`: multi-line block containing:
+  - What the endpoint does and business rules.
+  - Edge cases and error conditions with explanations.
+  - Step-by-step "How to test" instructions.
+- Request body: named `examples` with real data covering main use cases
+  (minimum 1 example, 2+ for endpoints with variants).
+- Error responses: each error code MUST explain WHY it occurs,
+  not just restate the HTTP status.
+
+Every schema field MUST have a `description` explaining what it means.
+Generic descriptions like "The field value" are PROHIBITED.
+
+The API info block MUST contain a top-level usage guide explaining
+how to authenticate and use the API step by step.
+
+After any endpoint or schema change, descriptions and examples
+MUST be updated to reflect the new behavior before committing.
+
 ## Technology Stack
 
 | Concern | Choice |
@@ -341,4 +380,4 @@ Sensitive data (passwords, tokens) MUST NOT be logged.
 **Compliance**: Claude Code and all reviews MUST verify Core Principles.
 Violations logged in `plan.md` Complexity Tracking with justification.
 
-**Version**: 1.2.4 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27
+**Version**: 1.3.0 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-30

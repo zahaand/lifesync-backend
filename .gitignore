@@ -42,5 +42,8 @@ build/
 ### Dev config ###
 application-dev.yml
 
+### Generated files ###
+lifesync-app/src/main/resources/static/lifesync-api.yaml
+
 ### Claude Code ###
 .claude/

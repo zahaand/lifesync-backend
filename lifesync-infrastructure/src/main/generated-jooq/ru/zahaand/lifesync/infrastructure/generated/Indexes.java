@@ -8,7 +8,10 @@ import org.jooq.Index;
 import org.jooq.OrderField;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
+
+import ru.zahaand.lifesync.infrastructure.generated.tables.GoalSentMilestones;
 import ru.zahaand.lifesync.infrastructure.generated.tables.ProcessedEvents;
+import ru.zahaand.lifesync.infrastructure.generated.tables.SentReminders;
 
 
 /**
@@ -21,5 +24,8 @@ public class Indexes {
     // INDEX definitions
     // -------------------------------------------------------------------------
 
+    public static final Index IDX_GOAL_SENT_MILESTONES_GOAL_ID = Internal.createIndex(DSL.name("idx_goal_sent_milestones_goal_id"), GoalSentMilestones.GOAL_SENT_MILESTONES, new OrderField[] { GoalSentMilestones.GOAL_SENT_MILESTONES.GOAL_ID }, false);
     public static final Index IDX_PROCESSED_EVENTS_EVENT_ID_CONSUMER_GROUP = Internal.createIndex(DSL.name("idx_processed_events_event_id_consumer_group"), ProcessedEvents.PROCESSED_EVENTS, new OrderField[] { ProcessedEvents.PROCESSED_EVENTS.EVENT_ID, ProcessedEvents.PROCESSED_EVENTS.CONSUMER_GROUP }, false);
+    public static final Index IDX_SENT_REMINDERS_HABIT_ID = Internal.createIndex(DSL.name("idx_sent_reminders_habit_id"), SentReminders.SENT_REMINDERS, new OrderField[] { SentReminders.SENT_REMINDERS.HABIT_ID }, false);
+    public static final Index IDX_SENT_REMINDERS_USER_ID = Internal.createIndex(DSL.name("idx_sent_reminders_user_id"), SentReminders.SENT_REMINDERS, new OrderField[] { SentReminders.SENT_REMINDERS.USER_ID }, false);
 }

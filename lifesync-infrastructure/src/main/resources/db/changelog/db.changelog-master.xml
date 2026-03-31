@@ -29,4 +29,7 @@
 
     <include file="db/changelog/system/V17__add_consumer_group_to_processed_events.xml"/>
 
+    <include file="db/changelog/notification/V18__create_sent_reminders.xml"/>
+    <include file="db/changelog/notification/V19__create_goal_sent_milestones.xml"/>
+
 </databaseChangeLog>

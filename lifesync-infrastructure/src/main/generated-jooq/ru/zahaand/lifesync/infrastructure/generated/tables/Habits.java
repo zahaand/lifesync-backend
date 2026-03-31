@@ -39,6 +39,7 @@ import ru.zahaand.lifesync.infrastructure.generated.tables.GoalHabits.GoalHabits
 import ru.zahaand.lifesync.infrastructure.generated.tables.Goals.GoalsPath;
 import ru.zahaand.lifesync.infrastructure.generated.tables.HabitLogs.HabitLogsPath;
 import ru.zahaand.lifesync.infrastructure.generated.tables.HabitStreaks.HabitStreaksPath;
+import ru.zahaand.lifesync.infrastructure.generated.tables.SentReminders.SentRemindersPath;
 import ru.zahaand.lifesync.infrastructure.generated.tables.Users.UsersPath;
 import ru.zahaand.lifesync.infrastructure.generated.tables.records.HabitsRecord;
 
@@ -245,6 +246,19 @@ public class Habits extends TableImpl<HabitsRecord> {
             _habitStreaks = new HabitStreaksPath(this, null, Keys.HABIT_STREAKS__FK_HABIT_STREAKS_HABIT.getInverseKey());
 
         return _habitStreaks;
+    }
+
+    private transient SentRemindersPath _sentReminders;
+
+    /**
+     * Get the implicit to-many join path to the
+     * <code>public.sent_reminders</code> table
+     */
+    public SentRemindersPath sentReminders() {
+        if (_sentReminders == null)
+            _sentReminders = new SentRemindersPath(this, null, Keys.SENT_REMINDERS__SENT_REMINDERS_HABIT_ID_FKEY.getInverseKey());
+
+        return _sentReminders;
     }
 
     /**

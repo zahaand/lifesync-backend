@@ -36,6 +36,7 @@ import ru.zahaand.lifesync.infrastructure.generated.Keys;
 import ru.zahaand.lifesync.infrastructure.generated.Public;
 import ru.zahaand.lifesync.infrastructure.generated.tables.GoalHabits.GoalHabitsPath;
 import ru.zahaand.lifesync.infrastructure.generated.tables.GoalMilestones.GoalMilestonesPath;
+import ru.zahaand.lifesync.infrastructure.generated.tables.GoalSentMilestones.GoalSentMilestonesPath;
 import ru.zahaand.lifesync.infrastructure.generated.tables.Habits.HabitsPath;
 import ru.zahaand.lifesync.infrastructure.generated.tables.Users.UsersPath;
 import ru.zahaand.lifesync.infrastructure.generated.tables.records.GoalsRecord;
@@ -225,6 +226,19 @@ public class Goals extends TableImpl<GoalsRecord> {
             _goalMilestones = new GoalMilestonesPath(this, null, Keys.GOAL_MILESTONES__FK_GOAL_MILESTONES_GOAL.getInverseKey());
 
         return _goalMilestones;
+    }
+
+    private transient GoalSentMilestonesPath _goalSentMilestones;
+
+    /**
+     * Get the implicit to-many join path to the
+     * <code>public.goal_sent_milestones</code> table
+     */
+    public GoalSentMilestonesPath goalSentMilestones() {
+        if (_goalSentMilestones == null)
+            _goalSentMilestones = new GoalSentMilestonesPath(this, null, Keys.GOAL_SENT_MILESTONES__GOAL_SENT_MILESTONES_GOAL_ID_FKEY.getInverseKey());
+
+        return _goalSentMilestones;
     }
 
     /**

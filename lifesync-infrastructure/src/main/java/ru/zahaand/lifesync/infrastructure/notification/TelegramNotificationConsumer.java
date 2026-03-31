@@ -82,7 +82,7 @@ public class TelegramNotificationConsumer {
             return;
         }
 
-        String message = "You've reached a " + streak.currentStreak() + "-day streak! Keep going!";
+        String message = "\uD83D\uDD25 " + habit.getTitle() + ": " + streak.currentStreak() + "-day streak! Keep going!";
         telegramNotificationSender.send(chatId, message);
 
         processedEventRepository.save(event.eventId(), "HabitCompletedEvent", CONSUMER_GROUP);

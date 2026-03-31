@@ -168,6 +168,23 @@
   Removed sections: none.
   Templates requiring updates: none.
   Follow-up TODOs: none.
+
+  Version change: 1.3.1 → 1.3.2
+  Bump rationale: PATCH — relaxed execution rule in Development Standards
+                  rule 7 (Commits). Allows multi-phase /speckit.implement
+                  runs when tasks are well-defined. Preserves commit-per-phase
+                  discipline.
+
+  Modified sections:
+    - Development Standards, rule 7: replaced implementation execution rules
+      block. Removed strict one-phase-at-a-time mandate. New rules allow
+      multi-phase runs but require separate commits per phase and recommend
+      running foundation phases separately.
+
+  Added sections: none.
+  Removed sections: none.
+  Templates requiring updates: none.
+  Follow-up TODOs: none.
 -->
 
 # LifeSync Backend Constitution
@@ -387,11 +404,14 @@ MUST be updated to reflect the new behavior before committing.
      `hotfix/token-expiry`).
    - Never use sprint numbers for non-SDD branches to avoid numbering gaps.
    Implementation execution rules:
-   - NEVER run /speckit.implement on an entire sprint at once.
-   - Run /speckit.implement on ONE phase at a time (max 15 tasks per run).
-   - After each phase: verify build passes, mark tasks [x], commit.
-   - Phase boundary = natural checkpoint in tasks.md.
-   - If a phase has >15 tasks, split it into sub-phases.
+   - /speckit.implement can run multiple phases at once when tasks are
+     well-defined and dependencies are clear.
+   - Foundation phases (migrations, domain, infra config) SHOULD run
+     separately — they are the build foundation for subsequent phases.
+   - After implementation: verify build passes, mark all tasks [x], commit.
+   - Commits MUST be split by phase regardless of how implementation was run.
+   - Each commit covers one phase or one logical group of related files.
+   - Never accumulate all sprint work into a single commit.
 8. API change = YAML change first. PR without YAML update is PROHIBITED.
 9. Kafka topic/event changes: atomic PR (producers + consumers together).
 10. Kafka consumers: check `processed_events` for idempotency.
@@ -414,4 +434,4 @@ MUST be updated to reflect the new behavior before committing.
 **Compliance**: Claude Code and all reviews MUST verify Core Principles.
 Violations logged in `plan.md` Complexity Tracking with justification.
 
-**Version**: 1.3.1 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-30
+**Version**: 1.3.2 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-31

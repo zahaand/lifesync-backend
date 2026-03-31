@@ -4,8 +4,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import ru.zahaand.lifesync.application.goal.AddMilestoneUseCase;
+import ru.zahaand.lifesync.application.goal.CreateGoalUseCase;
+import ru.zahaand.lifesync.application.goal.DeleteGoalUseCase;
+import ru.zahaand.lifesync.application.goal.DeleteMilestoneUseCase;
+import ru.zahaand.lifesync.application.goal.GetGoalUseCase;
+import ru.zahaand.lifesync.application.goal.GetGoalsUseCase;
+import ru.zahaand.lifesync.application.goal.LinkHabitToGoalUseCase;
+import ru.zahaand.lifesync.application.goal.RecalculateGoalProgressUseCase;
+import ru.zahaand.lifesync.application.goal.UnlinkHabitFromGoalUseCase;
+import ru.zahaand.lifesync.application.goal.UpdateGoalProgressUseCase;
+import ru.zahaand.lifesync.application.goal.UpdateGoalUseCase;
+import ru.zahaand.lifesync.application.goal.UpdateMilestoneUseCase;
 import ru.zahaand.lifesync.application.habit.*;
 import ru.zahaand.lifesync.application.user.*;
+import ru.zahaand.lifesync.domain.goal.GoalHabitLinkRepository;
+import ru.zahaand.lifesync.domain.goal.GoalMilestoneRepository;
+import ru.zahaand.lifesync.domain.goal.GoalRepository;
 import ru.zahaand.lifesync.domain.habit.HabitLogRepository;
 import ru.zahaand.lifesync.domain.habit.HabitRepository;
 import ru.zahaand.lifesync.domain.habit.HabitStreakRepository;
@@ -163,4 +178,85 @@ public class TestUseCaseConfig {
         return new GetHabitStreakUseCase(habitRepository, habitStreakRepository);
     }
 
+    @Bean
+    public CreateGoalUseCase createGoalUseCase(GoalRepository goalRepository, Clock clock) {
+        return new CreateGoalUseCase(goalRepository, clock);
+    }
+
+    @Bean
+    public GetGoalUseCase getGoalUseCase(GoalRepository goalRepository,
+                                          GoalMilestoneRepository milestoneRepository,
+                                          GoalHabitLinkRepository habitLinkRepository) {
+        return new GetGoalUseCase(goalRepository, milestoneRepository, habitLinkRepository);
+    }
+
+    @Bean
+    public GetGoalsUseCase getGoalsUseCase(GoalRepository goalRepository) {
+        return new GetGoalsUseCase(goalRepository);
+    }
+
+    @Bean
+    public UpdateGoalUseCase updateGoalUseCase(GoalRepository goalRepository, Clock clock) {
+        return new UpdateGoalUseCase(goalRepository, clock);
+    }
+
+    @Bean
+    public DeleteGoalUseCase deleteGoalUseCase(GoalRepository goalRepository, Clock clock) {
+        return new DeleteGoalUseCase(goalRepository, clock);
+    }
+
+    @Bean
+    public UpdateGoalProgressUseCase updateGoalProgressUseCase(GoalRepository goalRepository,
+                                                                ApplicationEventPublisher eventPublisher,
+                                                                Clock clock) {
+        return new UpdateGoalProgressUseCase(goalRepository, eventPublisher, clock);
+    }
+
+    @Bean
+    public RecalculateGoalProgressUseCase recalculateGoalProgressUseCase(GoalRepository goalRepository,
+                                                                          GoalHabitLinkRepository habitLinkRepository,
+                                                                          ApplicationEventPublisher eventPublisher,
+                                                                          Clock clock) {
+        return new RecalculateGoalProgressUseCase(goalRepository, habitLinkRepository,
+                eventPublisher, clock);
+    }
+
+    @Bean
+    public AddMilestoneUseCase addMilestoneUseCase(GoalRepository goalRepository,
+                                                    GoalMilestoneRepository milestoneRepository,
+                                                    Clock clock) {
+        return new AddMilestoneUseCase(goalRepository, milestoneRepository, clock);
+    }
+
+    @Bean
+    public UpdateMilestoneUseCase updateMilestoneUseCase(GoalRepository goalRepository,
+                                                          GoalMilestoneRepository milestoneRepository,
+                                                          Clock clock) {
+        return new UpdateMilestoneUseCase(goalRepository, milestoneRepository, clock);
+    }
+
+    @Bean
+    public DeleteMilestoneUseCase deleteMilestoneUseCase(GoalRepository goalRepository,
+                                                          GoalMilestoneRepository milestoneRepository,
+                                                          Clock clock) {
+        return new DeleteMilestoneUseCase(goalRepository, milestoneRepository, clock);
+    }
+
+    @Bean
+    public LinkHabitToGoalUseCase linkHabitToGoalUseCase(GoalRepository goalRepository,
+                                                          GoalHabitLinkRepository habitLinkRepository,
+                                                          HabitRepository habitRepository,
+                                                          RecalculateGoalProgressUseCase recalculateGoalProgressUseCase,
+                                                          Clock clock) {
+        return new LinkHabitToGoalUseCase(goalRepository, habitLinkRepository,
+                habitRepository, recalculateGoalProgressUseCase, clock);
+    }
+
+    @Bean
+    public UnlinkHabitFromGoalUseCase unlinkHabitFromGoalUseCase(GoalRepository goalRepository,
+                                                                  GoalHabitLinkRepository habitLinkRepository,
+                                                                  RecalculateGoalProgressUseCase recalculateGoalProgressUseCase) {
+        return new UnlinkHabitFromGoalUseCase(goalRepository, habitLinkRepository,
+                recalculateGoalProgressUseCase);
+    }
 }

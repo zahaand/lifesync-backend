@@ -9,6 +9,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.zahaand.lifesync.api.model.ErrorResponseDto;
+import ru.zahaand.lifesync.domain.goal.exception.DuplicateGoalHabitLinkException;
+import ru.zahaand.lifesync.domain.goal.exception.GoalHabitLinkNotFoundException;
+import ru.zahaand.lifesync.domain.goal.exception.GoalNotFoundException;
 import ru.zahaand.lifesync.domain.habit.exception.DuplicateHabitLogException;
 import ru.zahaand.lifesync.domain.habit.exception.HabitInactiveException;
 import ru.zahaand.lifesync.domain.habit.exception.HabitNotFoundException;
@@ -39,6 +42,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleHabitNotFound(HabitNotFoundException ex,
                                                                 HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(GoalNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleGoalNotFound(GoalNotFoundException ex,
+                                                               HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(GoalHabitLinkNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleGoalHabitLinkNotFound(GoalHabitLinkNotFoundException ex,
+                                                                        HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DuplicateGoalHabitLinkException.class)
+    public ResponseEntity<ErrorResponseDto> handleDuplicateGoalHabitLink(DuplicateGoalHabitLinkException ex,
+                                                                         HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(HabitInactiveException.class)

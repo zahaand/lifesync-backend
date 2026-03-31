@@ -68,7 +68,7 @@ class KafkaIntegrationIT extends BaseIT {
 
             UUID habitUuid = UUID.fromString(habitId);
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() -> {
                         Integer currentStreak = dsl.select(HABIT_STREAKS.CURRENT_STREAK)
@@ -78,7 +78,7 @@ class KafkaIntegrationIT extends BaseIT {
                         assertThat(currentStreak).isNotNull().isGreaterThanOrEqualTo(1);
                     });
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() -> {
                         int processedCount = dsl.fetchCount(

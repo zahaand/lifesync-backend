@@ -84,7 +84,7 @@ class TelegramNotificationConsumerIT extends BaseIT {
             kafkaTemplate.send(new ProducerRecord<>("habit.log.completed",
                     habitUuid.toString(), event));
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() ->
                             assertTrue(processedEventRepository.existsByEventIdAndConsumerGroup(

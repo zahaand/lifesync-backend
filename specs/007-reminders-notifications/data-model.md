@@ -136,7 +136,7 @@ GoalNotificationConsumer receives GoalProgressUpdatedEvent
     │
     ├── telegramEnabled? NO → mark processed, return
     │
-    ├── Load goal via GoalRepository.findById(goalId)
+    ├── Load goal via GoalRepository.findByIdAndUserId(goalId, userId)
     │       NOT FOUND or DELETED → mark processed, return
     │
     ├── Load user via UserRepository.findById(userId)

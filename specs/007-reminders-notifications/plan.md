@@ -136,7 +136,7 @@ lifesync-web/src/test/java/ru/zahaand/lifesync/web/notification/
 - Update TelegramNotificationConsumer: change message from "You've reached a {N}-day streak! Keep going!" to "🔥 {habitTitle}: {N}-day streak! Keep going!" — habit.getTitle() already loaded
 - Update GoalNotificationConsumer: replace stub with real implementation:
   - Inject: GoalRepository, GoalSentMilestoneRepository, UserRepository, TelegramNotificationSender, `@Value("${lifesync.telegram.enabled}") boolean telegramEnabled`
-  - On event: check telegramEnabled, load goal via findById(goalId), skip if deleted
+  - On event: check telegramEnabled, load goal via findByIdAndUserId(goalId, userId), skip if deleted
   - Determine milestones crossed: for each threshold in [25, 50, 75, 100]: if progressPercentage >= threshold AND !goalSentMilestoneRepository.existsByGoalIdAndThreshold(goalId, threshold) → send notification, save milestone
   - Load user, check telegramChatId
   - Messages: < 100%: "🎯 {goalTitle}: {N}% complete! Keep going!" / 100%: "🎯 {goalTitle}: Goal achieved! Congratulations! 🎉"

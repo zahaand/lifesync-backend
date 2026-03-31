@@ -30,7 +30,7 @@ A user sets a reminder time on a habit (e.g., "08:00"). Each day at that time in
 
 **Acceptance Scenarios**:
 
-1. **Given** a user has Telegram connected and a habit "Morning run" with reminder_time "07:00" and timezone "Europe/Moscow", **When** the scheduler runs and 07:00 MSK matches the current minute, **Then** the system sends a Telegram message: "Reminder: time to do 'Morning run'!"
+1. **Given** a user has Telegram connected and a habit "Morning run" with reminder_time "07:00" and timezone "Europe/Moscow", **When** the scheduler runs and 07:00 MSK matches the current minute, **Then** the system sends a Telegram message: "⏰ Time to Morning run! Don't break your streak!"
 2. **Given** a user has Telegram connected and a habit with reminder_time "08:00", **When** the user has already completed the habit today, **Then** no reminder is sent.
 3. **Given** a user has Telegram connected and two habits with reminder_time "09:00", **When** the scheduler runs at 09:00 in the user's timezone, **Then** both habits trigger separate reminder messages.
 4. **Given** a habit has reminder_time set but the user has NOT connected Telegram (no telegramChatId), **Then** no reminder is sent and no error occurs.
@@ -130,12 +130,13 @@ The scheduler runs in UTC. For each habit with a reminder_time, it loads the use
 - **FR-017**: System MUST NOT send goal milestone notifications when the user has not connected Telegram.
 - **FR-018**: System MUST NOT send goal milestone notifications for soft-deleted goals.
 - **FR-019**: System MUST process GoalProgressUpdatedEvents idempotently (existing behavior preserved).
+- **FR-020**: System MUST NOT send goal milestone notifications when the Telegram integration flag (`lifesync.telegram.enabled`) is disabled.
 
 ### Key Entities
 
 - **Habit Reminder**: A scheduled notification for a specific habit at the user's configured reminder_time in their local timezone. Sent once per day for active habits with Telegram connected and the habit not yet completed today. Tracked via the `sent_reminders` table (habit_id, user_id, sent_date) with composite unique on (habit_id, sent_date).
 - **Goal Milestone Notification Record**: A persistent record that tracks which milestone thresholds (25%, 50%, 75%, 100%) have been sent for each goal. Prevents duplicate notifications even across restarts.
-- **Notification Message**: A Telegram message sent to a user's chat. Habit reminders: "Reminder: time to do '{habitTitle}'!" Streak milestones: "🔥 {habitTitle}: {N}-day streak! Keep going!" Goal milestones: "🎯 {goalTitle}: {N}% complete! Keep going!" Goal 100%: "🎯 {goalTitle}: Goal achieved! Congratulations! 🎉"
+- **Notification Message**: A Telegram message sent to a user's chat. Habit reminders: "⏰ Time to {habitTitle}! Don't break your streak!" Streak milestones: "🔥 {habitTitle}: {N}-day streak! Keep going!" Goal milestones: "🎯 {goalTitle}: {N}% complete! Keep going!" Goal 100%: "🎯 {goalTitle}: Goal achieved! Congratulations! 🎉"
 
 ## Success Criteria
 

@@ -33,7 +33,7 @@ public abstract class BaseIT {
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
-        registry.add("lifesync.telegram.enabled", () -> "false");
+        registry.add("lifesync.telegram.enabled", () -> "true");
         registry.add("jwt.private-key", () -> TEST_PRIVATE_KEY);
         registry.add("jwt.public-key", () -> TEST_PUBLIC_KEY);
         registry.add("jwt.access-token-expiry", () -> "900");

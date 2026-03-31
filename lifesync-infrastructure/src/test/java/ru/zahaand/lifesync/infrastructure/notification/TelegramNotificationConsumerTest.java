@@ -105,7 +105,7 @@ class TelegramNotificationConsumerTest {
 
             consumer.consume(record(evt));
 
-            String expectedMessage = "You've reached a " + milestone + "-day streak! Keep going!";
+            String expectedMessage = "\uD83D\uDD25 " + "Test" + ": " + milestone + "-day streak! Keep going!";
             verify(telegramNotificationSender).send(CHAT_ID, expectedMessage);
             verify(processedEventRepository).save(EVENT_ID, "HabitCompletedEvent", "lifesync-telegram-notifier");
         }
@@ -154,6 +154,22 @@ class TelegramNotificationConsumerTest {
             verify(habitRepository, never()).findByIdAndUserId(any(), any());
             verify(telegramNotificationSender, never()).send(any(), any());
             verify(processedEventRepository, never()).save(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("Should include habit title in milestone message")
+        void shouldIncludeHabitTitleInMessage() {
+            HabitCompletedEvent evt = event();
+
+            when(processedEventRepository.existsByEventIdAndConsumerGroup(EVENT_ID, "lifesync-telegram-notifier"))
+                    .thenReturn(false);
+            stubHabitAndStreak(7);
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(userWithTelegram(CHAT_ID)));
+
+            consumer.consume(record(evt));
+
+            verify(telegramNotificationSender).send(eq(CHAT_ID),
+                    org.mockito.ArgumentMatchers.contains("Test"));
         }
 
         @Test

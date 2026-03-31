@@ -19,10 +19,10 @@
 
 **⚠️ CRITICAL**: No code implementation can begin until this phase is complete and `mvn compile` succeeds.
 
-- [ ] T001 [P] [US1] Create Liquibase migration V18 for `sent_reminders` table — columns: id (uuid PK, gen_random_uuid()), habit_id (uuid NOT NULL), user_id (uuid NOT NULL), sent_date (date NOT NULL), created_at (timestamptz NOT NULL, default now()). FK habit_id→habits(id) CASCADE, FK user_id→users(id) CASCADE. Unique constraint on (habit_id, sent_date). Indexes on habit_id, user_id. Rollback: dropAllForeignKeyConstraints + dropTable. In `lifesync-infrastructure/src/main/resources/db/changelog/notification/V18__create_sent_reminders.xml`
-- [ ] T002 [P] [US2] Create Liquibase migration V19 for `goal_sent_milestones` table — columns: id (uuid PK, gen_random_uuid()), goal_id (uuid NOT NULL), threshold (int NOT NULL), sent_at (timestamptz NOT NULL, default now()), created_at (timestamptz NOT NULL, default now()). FK goal_id→goals(id) CASCADE. Unique constraint on (goal_id, threshold). Index on goal_id. Rollback: dropAllForeignKeyConstraints + dropTable. In `lifesync-infrastructure/src/main/resources/db/changelog/notification/V19__create_goal_sent_milestones.xml`
-- [ ] T003 Add V18 and V19 includes to changelog master file in order after V17 in `lifesync-infrastructure/src/main/resources/db/changelog/db.changelog-master.xml`
-- [ ] T004 Run `mvn generate-sources -pl lifesync-infrastructure` to regenerate jOOQ classes for sent_reminders and goal_sent_milestones tables
+- [x] T001 [P] [US1] Create Liquibase migration V18 for `sent_reminders` table — columns: id (uuid PK, gen_random_uuid()), habit_id (uuid NOT NULL), user_id (uuid NOT NULL), sent_date (date NOT NULL), created_at (timestamptz NOT NULL, default now()). FK habit_id→habits(id) CASCADE, FK user_id→users(id) CASCADE. Unique constraint on (habit_id, sent_date). Indexes on habit_id, user_id. Rollback: dropAllForeignKeyConstraints + dropTable. In `lifesync-infrastructure/src/main/resources/db/changelog/notification/V18__create_sent_reminders.xml`
+- [x] T002 [P] [US2] Create Liquibase migration V19 for `goal_sent_milestones` table — columns: id (uuid PK, gen_random_uuid()), goal_id (uuid NOT NULL), threshold (int NOT NULL), sent_at (timestamptz NOT NULL, default now()), created_at (timestamptz NOT NULL, default now()). FK goal_id→goals(id) CASCADE. Unique constraint on (goal_id, threshold). Index on goal_id. Rollback: dropAllForeignKeyConstraints + dropTable. In `lifesync-infrastructure/src/main/resources/db/changelog/notification/V19__create_goal_sent_milestones.xml`
+- [x] T003 Add V18 and V19 includes to changelog master file in order after V17 in `lifesync-infrastructure/src/main/resources/db/changelog/db.changelog-master.xml`
+- [x] T004 Run `mvn generate-sources -pl lifesync-infrastructure` to regenerate jOOQ classes for sent_reminders and goal_sent_milestones tables
 
 **Checkpoint**: `mvn compile -pl lifesync-infrastructure` passes. jOOQ classes for SENT_REMINDERS and GOAL_SENT_MILESTONES are generated. Migrations apply cleanly.
 
@@ -32,10 +32,10 @@
 
 **Purpose**: Port interfaces for new repositories. Extend HabitRepository with reminder query method. Pure Java only — no Spring, jOOQ, Kafka imports (Constitution §I). No Lombok (Constitution §VII).
 
-- [ ] T005 [P] [US1] Create SentReminderRepository port interface with methods: `boolean existsByHabitIdAndDate(HabitId habitId, LocalDate sentDate)`, `void save(HabitId habitId, UUID userId, LocalDate sentDate)` in `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/notification/SentReminderRepository.java`
-- [ ] T006 [P] [US2] Create GoalSentMilestoneRepository port interface with methods: `boolean existsByGoalIdAndThreshold(GoalId goalId, int threshold)`, `void save(GoalId goalId, int threshold)` in `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/notification/GoalSentMilestoneRepository.java`
-- [ ] T007 [P] [US1] Create HabitWithUser record in `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/habit/HabitWithUser.java` — record with fields: `Habit habit`, `String telegramChatId`, `String timezone`. Bundles habit entity with user's Telegram and timezone data for scheduler use.
-- [ ] T008 [US1] Add `List<HabitWithUser> findAllActiveWithReminderTime()` method to existing HabitRepository port interface — returns all non-deleted habits with non-null reminder_time, joined with user profile data (telegramChatId, timezone). In `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/habit/HabitRepository.java`
+- [x] T005 [P] [US1] Create SentReminderRepository port interface with methods: `boolean existsByHabitIdAndDate(HabitId habitId, LocalDate sentDate)`, `void save(HabitId habitId, UUID userId, LocalDate sentDate)` in `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/notification/SentReminderRepository.java`
+- [x] T006 [P] [US2] Create GoalSentMilestoneRepository port interface with methods: `boolean existsByGoalIdAndThreshold(GoalId goalId, int threshold)`, `void save(GoalId goalId, int threshold)` in `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/notification/GoalSentMilestoneRepository.java`
+- [x] T007 [P] [US1] Create HabitWithUser record in `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/habit/HabitWithUser.java` — record with fields: `Habit habit`, `String telegramChatId`, `String timezone`. Bundles habit entity with user's Telegram and timezone data for scheduler use.
+- [x] T008 [US1] Add `List<HabitWithUser> findAllActiveWithReminderTime()` method to existing HabitRepository port interface — returns all non-deleted habits with non-null reminder_time, joined with user profile data (telegramChatId, timezone). In `lifesync-domain/src/main/java/ru/zahaand/lifesync/domain/habit/HabitRepository.java`
 
 **Checkpoint**: `mvn compile -pl lifesync-domain` passes. No Spring/jOOQ imports in any domain file. All new types are pure Java.
 
@@ -45,9 +45,9 @@
 
 **Purpose**: jOOQ implementations for new ports. Extend JooqHabitRepository with reminder query.
 
-- [ ] T009 [P] [US1] Implement JooqSentReminderRepository (@Repository, DSLContext) — `existsByHabitIdAndDate` queries SENT_REMINDERS where habit_id = ? AND sent_date = ?. `save` inserts into SENT_REMINDERS with habit_id, user_id, sent_date, created_at. Constructor injection, all fields final. In `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/JooqSentReminderRepository.java`
-- [ ] T010 [P] [US2] Implement JooqGoalSentMilestoneRepository (@Repository, DSLContext) — `existsByGoalIdAndThreshold` queries GOAL_SENT_MILESTONES where goal_id = ? AND threshold = ?. `save` inserts with goal_id, threshold, sent_at = now(), created_at = now(). Constructor injection, all fields final. In `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/JooqGoalSentMilestoneRepository.java`
-- [ ] T011 [US1] Add `findAllActiveWithReminderTime()` implementation to JooqHabitRepository — SELECT habits.* plus user_profiles.telegram_chat_id and user_profiles.timezone FROM habits JOIN users ON habits.user_id = users.id JOIN user_profiles ON user_profiles.user_id = users.id WHERE habits.reminder_time IS NOT NULL AND habits.deleted_at IS NULL. Map results to List<HabitWithUser>. In `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/habit/JooqHabitRepository.java`
+- [x] T009 [P] [US1] Implement JooqSentReminderRepository (@Repository, DSLContext) — `existsByHabitIdAndDate` queries SENT_REMINDERS where habit_id = ? AND sent_date = ?. `save` inserts into SENT_REMINDERS with habit_id, user_id, sent_date, created_at. Constructor injection, all fields final. In `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/JooqSentReminderRepository.java`
+- [x] T010 [P] [US2] Implement JooqGoalSentMilestoneRepository (@Repository, DSLContext) — `existsByGoalIdAndThreshold` queries GOAL_SENT_MILESTONES where goal_id = ? AND threshold = ?. `save` inserts with goal_id, threshold, sent_at = now(), created_at = now(). Constructor injection, all fields final. In `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/JooqGoalSentMilestoneRepository.java`
+- [x] T011 [US1] Add `findAllActiveWithReminderTime()` implementation to JooqHabitRepository — SELECT habits.* plus user_profiles.telegram_chat_id and user_profiles.timezone FROM habits JOIN users ON habits.user_id = users.id JOIN user_profiles ON user_profiles.user_id = users.id WHERE habits.reminder_time IS NOT NULL AND habits.deleted_at IS NULL. Map results to List<HabitWithUser>. In `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/habit/JooqHabitRepository.java`
 
 **Checkpoint**: `mvn compile -pl lifesync-infrastructure` passes. All three repository implementations compile.
 
@@ -59,7 +59,7 @@
 
 ### HabitReminderScheduler (US1 + US4)
 
-- [ ] T012 [US1] Implement HabitReminderScheduler (@Component) with @Scheduled(cron = "0 * * * * *") in `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/HabitReminderScheduler.java`:
+- [x] T012 [US1] Implement HabitReminderScheduler (@Component) with @Scheduled(cron = "0 * * * * *") in `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/HabitReminderScheduler.java`:
   - Constructor-inject: HabitRepository, SentReminderRepository, HabitLogRepository, TelegramNotificationSender, Clock, @Value("${lifesync.telegram.enabled}") boolean telegramEnabled
   - All fields final. Logger via LoggerFactory. No Lombok.
   - `sendReminders()` method annotated with @Scheduled:
@@ -81,11 +81,11 @@
 
 ### TelegramNotificationConsumer Enhancement (US3)
 
-- [ ] T013 [US3] Update TelegramNotificationConsumer message format — change line 85 from `"You've reached a " + streak.currentStreak() + "-day streak! Keep going!"` to `"🔥 " + habit.getTitle() + ": " + streak.currentStreak() + "-day streak! Keep going!"` (CHK024/FR-012). The `habit` variable is already loaded at line 62. No other changes. In `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/TelegramNotificationConsumer.java`
+- [x] T013 [US3] Update TelegramNotificationConsumer message format — change line 85 from `"You've reached a " + streak.currentStreak() + "-day streak! Keep going!"` to `"🔥 " + habit.getTitle() + ": " + streak.currentStreak() + "-day streak! Keep going!"` (CHK024/FR-012). The `habit` variable is already loaded at line 62. No other changes. In `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/TelegramNotificationConsumer.java`
 
 ### GoalNotificationConsumer Real Implementation (US2)
 
-- [ ] T014 [US2] Replace GoalNotificationConsumer stub with real milestone notification logic in `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/goal/GoalNotificationConsumer.java`:
+- [x] T014 [US2] Replace GoalNotificationConsumer stub with real milestone notification logic in `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/goal/GoalNotificationConsumer.java`:
   - Add constructor dependencies: GoalRepository, GoalSentMilestoneRepository, UserRepository, TelegramNotificationSender, @Value("${lifesync.telegram.enabled}") boolean telegramEnabled
   - Keep existing: ProcessedEventRepository, CONSUMER_GROUP = "lifesync-goal-notifier", @KafkaListener annotation, DEBUG log for topic/partition/offset
   - Keep existing: idempotency check via ProcessedEventRepository (event-level dedup)
@@ -114,7 +114,7 @@
 
 ### Unit Tests
 
-- [ ] T015 [P] [US1] Write HabitReminderSchedulerTest — @ExtendWith(MockitoExtension.class). Mock: HabitRepository, SentReminderRepository, HabitLogRepository, TelegramNotificationSender, Clock.fixed(). @Nested per method `sendReminders`:
+- [x] T015 [P] [US1] Write HabitReminderSchedulerTest — @ExtendWith(MockitoExtension.class). Mock: HabitRepository, SentReminderRepository, HabitLogRepository, TelegramNotificationSender, Clock.fixed(). @Nested per method `sendReminders`:
   1. shouldSendReminderWhenTimeMatches — habit with reminder_time matching current minute, not yet sent, not completed → verify send + save
   2. shouldSkipWhenTelegramDisabled — telegramEnabled=false → verify no send, no repository calls
   3. shouldSkipWhenAlreadySentToday — existsByHabitIdAndDate returns true → verify no send
@@ -125,7 +125,7 @@
   8. shouldContinueOnTelegramFailure — send throws RuntimeException → verify no save for failed habit, continue to next habit
   In `lifesync-infrastructure/src/test/java/ru/zahaand/lifesync/infrastructure/notification/HabitReminderSchedulerTest.java`
 
-- [ ] T016 [P] [US2] Write GoalNotificationConsumerTest — @ExtendWith(MockitoExtension.class). Mock: GoalRepository, GoalSentMilestoneRepository, UserRepository, TelegramNotificationSender, ProcessedEventRepository. @Nested per method `consume`:
+- [x] T016 [P] [US2] Write GoalNotificationConsumerTest — @ExtendWith(MockitoExtension.class). Mock: GoalRepository, GoalSentMilestoneRepository, UserRepository, TelegramNotificationSender, ProcessedEventRepository. @Nested per method `consume`:
   1. shouldSendMilestoneAt25Percent — progress=25, no prior milestones → verify send "🎯 ... 25% complete...", verify save(goalId, 25)
   2. shouldSendMilestoneAt100PercentWithSpecialMessage — progress=100 → verify "🎯 ... Goal achieved! Congratulations! 🎉"
   3. shouldSendMultipleMilestonesOnJump — progress=80, no prior milestones → verify 25%, 50%, 75% all sent and saved (3 sends, 3 saves)
@@ -137,15 +137,15 @@
   9. shouldHandleDuplicateEvent — existsByEventIdAndConsumerGroup returns true → verify no processing
   In `lifesync-infrastructure/src/test/java/ru/zahaand/lifesync/infrastructure/goal/GoalNotificationConsumerTest.java`
 
-- [ ] T017 [P] [US3] Update existing TelegramNotificationConsumerTest — modify `shouldSendNotificationForMilestone` test (line 108) to assert new message format `"🔥 " + habitTitle + ": " + milestone + "-day streak! Keep going!"` instead of old format. Add new test `shouldIncludeHabitTitleInMessage` to verify habit title is present in the notification message. In `lifesync-infrastructure/src/test/java/ru/zahaand/lifesync/infrastructure/notification/TelegramNotificationConsumerTest.java`
+- [x] T017 [P] [US3] Update existing TelegramNotificationConsumerTest — modify `shouldSendNotificationForMilestone` test (line 108) to assert new message format `"🔥 " + habitTitle + ": " + milestone + "-day streak! Keep going!"` instead of old format. Add new test `shouldIncludeHabitTitleInMessage` to verify habit title is present in the notification message. In `lifesync-infrastructure/src/test/java/ru/zahaand/lifesync/infrastructure/notification/TelegramNotificationConsumerTest.java`
 
 ### Integration Tests
 
-- [ ] T018 [US1] Write HabitReminderSchedulerIT (extends BaseIT) — end-to-end: register user with timezone + telegram, create habit with reminder_time matching current test clock minute, invoke scheduler, verify sent_reminders row created. Test duplicate prevention: invoke scheduler again, verify no second row. Test completed habit skip: complete habit then invoke scheduler, verify no reminder sent. In `lifesync-web/src/test/java/ru/zahaand/lifesync/web/notification/HabitReminderSchedulerIT.java`
+- [x] T018 [US1] Write HabitReminderSchedulerIT (extends BaseIT) — end-to-end: register user with timezone + telegram, create habit with reminder_time matching current test clock minute, invoke scheduler, verify sent_reminders row created. Test duplicate prevention: invoke scheduler again, verify no second row. Test completed habit skip: complete habit then invoke scheduler, verify no reminder sent. In `lifesync-web/src/test/java/ru/zahaand/lifesync/web/notification/HabitReminderSchedulerIT.java`
 
-- [ ] T019 [US2] Write GoalNotificationConsumerIT (extends BaseIT) — end-to-end: register user with telegram, create goal, publish GoalProgressUpdatedEvent with progress=25 → verify goal_sent_milestones row for 25%. Publish another event with progress=75 → verify 50% and 75% rows added. Publish duplicate event → verify idempotency. Publish event with progress=100 → verify 100% row. In `lifesync-web/src/test/java/ru/zahaand/lifesync/web/notification/GoalNotificationConsumerIT.java`
+- [x] T019 [US2] Write GoalNotificationConsumerIT (extends BaseIT) — end-to-end: register user with telegram, create goal, publish GoalProgressUpdatedEvent with progress=25 → verify goal_sent_milestones row for 25%. Publish another event with progress=75 → verify 50% and 75% rows added. Publish duplicate event → verify idempotency. Publish event with progress=100 → verify 100% row. In `lifesync-web/src/test/java/ru/zahaand/lifesync/web/notification/GoalNotificationConsumerIT.java`
 
-- [ ] T020 [US3] Write TelegramNotificationConsumerIT (extends BaseIT) — publish HabitCompletedEvent for a habit at 7-day streak → verify notification message contains habit title. Use Awaitility for async assertion. In `lifesync-web/src/test/java/ru/zahaand/lifesync/web/notification/TelegramNotificationConsumerIT.java`
+- [x] T020 [US3] Write TelegramNotificationConsumerIT (extends BaseIT) — publish HabitCompletedEvent for a habit at 7-day streak → verify notification message contains habit title. Use Awaitility for async assertion. In `lifesync-web/src/test/java/ru/zahaand/lifesync/web/notification/TelegramNotificationConsumerIT.java`
 
 **Checkpoint**: `mvn verify` passes. All tests green with Testcontainers. JaCoCo ≥ 80% on new code.
 

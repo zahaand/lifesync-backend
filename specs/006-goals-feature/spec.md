@@ -11,7 +11,10 @@
 
 - Q: How is goal progress updated — automatically, manually, or both? → A: Both. Automatic via habit completion ratio + manual via PATCH endpoint. [RESOLVED]
 - Q: Are milestone-based notifications in scope for Sprint 6? → A: No. Sprint 6 implements stub consumers only (GoalAnalyticsConsumer, GoalNotificationConsumer). Real notifications with thresholds (25%, 50%, 75%, 100%) deferred to Sprint 7. [RESOLVED]
-- Q: How is automatic goal progress calculated from linked habits? → A: (completed habits count / total linked habits count) * 100, rounded to integer. If no habits linked, progress is manual-only. [RESOLVED]
+- Q: How is automatic goal progress calculated from linked habits? → A: (distinct dates with at least one linked habit completed / total expected completions based on habit frequency) * 100, rounded to nearest integer. If no habits linked, progress is manual-only. [RESOLVED — formula updated by Clarification 6]
+- Q: What happens when a goal has no linked habits? → A: Progress defaults to 0 on creation. Only manual progress updates (PATCH) available. Automatic calculation is skipped entirely when linked habit count = 0. [RESOLVED]
+- Q: Does habit log deletion trigger goal progress recalculation? → A: Yes. GoalProgressConsumer recalculates progress for ALL goals linked to the deleted habit's habit — same logic as on completion. HabitCompletedEvent is already published on log deletion (Sprint 5). Consumer handles both identically: recalculate from current state. [RESOLVED]
+- Q: What happens when a habit is linked to a goal that already has progress? → A: Recalculate goal progress immediately using current habit logs and the standard formula. This keeps progress consistent with the new set of linked habits. [RESOLVED]
 
 ## User Scenarios & Testing
 
@@ -55,7 +58,7 @@ A user breaks a goal into milestones (ordered sub-tasks) for organizational purp
 
 ### User Story 3 - Habit-Goal Linking & Automatic Progress (Priority: P3)
 
-A user links one or more of their existing habits to a goal. The system automatically calculates goal progress based on the ratio of completed linked habits to total linked habits. When any linked habit is completed, progress is recalculated and a GoalProgressUpdatedEvent is published. The user can also unlink habits, which triggers recalculation.
+A user links one or more of their existing habits to a goal. The system automatically calculates goal progress based on habit completion frequency: (distinct dates with at least one linked habit completed / total expected completions based on habit frequency) * 100, rounded to nearest integer. When any linked habit is completed or a habit log is deleted, progress is recalculated and a GoalProgressUpdatedEvent is published. When a habit is newly linked, progress is recalculated immediately from current state. The user can also unlink habits, which triggers recalculation.
 
 **Why this priority**: Linking habits to goals and automatic progress is the core differentiator of LifeSync — connecting daily actions to long-term aspirations with real-time feedback. It depends on goals (P1) and the existing habits feature.
 
@@ -68,9 +71,10 @@ A user links one or more of their existing habits to a goal. The system automati
 3. **Given** a goal has 2 linked habits, **When** the user unlinks one, **Then** only the remaining habit is shown and progress is recalculated.
 4. **Given** a user tries to link another user's habit to their goal, **Then** the system denies access.
 5. **Given** a habit is deleted (soft-deleted), **Then** it is automatically unlinked from all goals via database cascade.
-6. **Given** a goal with 4 linked habits (2 completed today), **When** the user views the goal, **Then** progress shows 50%.
-7. **Given** a goal with 3 linked habits (all completed today), **Then** progress is 100% and the status changes to COMPLETED.
-8. **Given** a goal with no linked habits, **Then** automatic progress calculation does not apply; progress is controlled only via manual update.
+6. **Given** a goal with 4 linked habits (2 completed today), **When** the user views the goal, **Then** progress is calculated using the frequency-aware formula and reflects actual completion ratio.
+7. **Given** a goal with 3 linked habits (all completed per their expected frequency), **Then** progress is 100% and the status changes to COMPLETED.
+8. **Given** a goal with no linked habits, **Then** automatic progress calculation is skipped entirely; progress is controlled only via manual update and defaults to 0 on creation.
+9. **Given** a goal with existing progress and a new habit is linked, **Then** progress is recalculated immediately from the current state of all linked habits' logs.
 
 ---
 
@@ -94,7 +98,7 @@ A user directly sets a goal's progress percentage (0-100) via a dedicated endpoi
 
 ### User Story 5 - Automatic Progress via Habit Completion Events (Priority: P5)
 
-When a user completes a habit that is linked to one or more goals, a consumer processes the HabitCompletedEvent, recalculates goal progress for each linked active goal, and publishes a GoalProgressUpdatedEvent per goal. This is the async integration between the habits and goals features.
+When a user completes a habit (or deletes a habit log) that is linked to one or more goals, a consumer processes the HabitCompletedEvent, recalculates goal progress for each linked active goal using the frequency-aware formula, and publishes a GoalProgressUpdatedEvent per goal. The consumer handles both habit completion and habit log deletion identically — it recalculates from the current state of all linked habits. This is the async integration between the habits and goals features.
 
 **Why this priority**: This is the event-driven backbone. It depends on habit-goal linking (P3) and reuses the existing Kafka infrastructure. It completes the automatic progress feedback loop.
 
@@ -102,11 +106,12 @@ When a user completes a habit that is linked to one or more goals, a consumer pr
 
 **Acceptance Scenarios**:
 
-1. **Given** a habit linked to a goal with 4 linked habits (1 previously completed), **When** the user completes this habit, **Then** goal progress is recalculated to 50% and a GoalProgressUpdatedEvent is published.
+1. **Given** a habit linked to a goal with 4 linked habits (1 previously completed), **When** the user completes this habit, **Then** goal progress is recalculated using the frequency-aware formula and a GoalProgressUpdatedEvent is published.
 2. **Given** a habit linked to multiple goals, **When** the user completes the habit, **Then** a separate GoalProgressUpdatedEvent is published for each linked active goal.
 3. **Given** a habit not linked to any goal, **When** the user completes it, **Then** no GoalProgressUpdatedEvent is published.
 4. **Given** the same habit completion event is received twice (duplicate), **Then** the consumer processes it only once (idempotency).
 5. **Given** a habit linked to a soft-deleted goal, **When** the user completes it, **Then** no GoalProgressUpdatedEvent is published for the deleted goal.
+6. **Given** a habit log is deleted for a habit linked to a goal, **When** the consumer processes the event, **Then** goal progress is recalculated downward from current state and a GoalProgressUpdatedEvent is published.
 
 ---
 
@@ -132,11 +137,13 @@ When a GoalProgressUpdatedEvent is published, two stub consumers process it: Goa
 - What happens when a user deletes a goal that has milestones and linked habits? All milestones are soft-deleted with the goal; habit links are removed via database cascade.
 - What happens when a user completes a habit linked to a soft-deleted goal? No GoalProgressUpdatedEvent is published for deleted goals.
 - What happens when a user sets a target date in the past? The system allows it (goals can be retroactive records).
-- What happens when all habits are unlinked from a goal? Progress retains its last value; future updates are manual-only until new habits are linked.
+- What happens when all habits are unlinked from a goal? Progress retains its last value; future updates are manual-only until new habits are linked. Automatic calculation is skipped when linked habit count = 0.
 - What happens when a milestone is completed on a goal with status COMPLETED? The milestone is updated but goal status remains COMPLETED.
 - What happens when a user manually sets progress and then a linked habit is completed? The automatic recalculation overwrites the manual value.
 - What happens when a goal has linked habits but none are completed? Progress is 0%.
 - What happens when progress reaches 100% via either manual or automatic update? Goal status changes to COMPLETED regardless of update source.
+- What happens when a habit log is deleted for a habit linked to a goal? GoalProgressConsumer recalculates progress downward for ALL affected goals — same logic as on completion, using current state.
+- What happens when a habit is linked to a goal that already has progress? Progress is recalculated immediately from the current state of all linked habits' logs, keeping progress consistent with the new set of linked habits.
 
 ## Requirements
 
@@ -155,7 +162,8 @@ When a GoalProgressUpdatedEvent is published, two stub consumers process it: Goa
 - **FR-011**: System MUST allow users to link their own habits to their own goals (many-to-many relationship).
 - **FR-012**: System MUST prevent duplicate habit-goal links.
 - **FR-013**: System MUST allow users to unlink habits from goals.
-- **FR-014**: System MUST automatically recalculate goal progress as (completed linked habits count / total linked habits count) * 100, rounded to the nearest integer, whenever a linked habit is completed.
+- **FR-014**: System MUST automatically recalculate goal progress as (distinct dates with at least one linked habit completed / total expected completions based on habit frequency) * 100, rounded to the nearest integer, whenever a linked habit is completed or a habit log is deleted. If no habits are linked, automatic calculation is skipped entirely.
+- **FR-014a**: System MUST recalculate goal progress immediately when a habit is newly linked to a goal, using the current state of all linked habits' logs.
 - **FR-015**: System MUST allow users to manually set goal progress (0-100) via a dedicated endpoint.
 - **FR-016**: System MUST automatically set goal status to COMPLETED when progress reaches 100% (via either automatic or manual update).
 - **FR-017**: System MUST publish a GoalProgressUpdatedEvent when goal progress changes — whether from automatic habit-based recalculation or manual update.
@@ -168,7 +176,7 @@ When a GoalProgressUpdatedEvent is published, two stub consumers process it: Goa
 
 - **Goal**: A user's long-term objective. Has a title, optional description, optional target date, status (ACTIVE/COMPLETED), progress percentage (0-100), and soft-delete support. Owned by exactly one user. Progress is updated via two paths: automatically from linked habit completions, or manually by the user.
 - **Goal Milestone**: An ordered sub-task within a goal for organizational purposes. Has a title, sort order, completion status, and soft-delete support. Milestones do not affect the goal's progress percentage.
-- **Goal-Habit Link**: A many-to-many relationship between goals and habits via a junction table. Progress is derived from the ratio of completed linked habits to total linked habits. When any linked habit is completed, goal progress is recalculated and an event is published. A habit can be linked to multiple goals, and a goal can have multiple linked habits.
+- **Goal-Habit Link**: A many-to-many relationship between goals and habits via a junction table. Progress is derived from a frequency-aware formula: (distinct dates with at least one linked habit completed / total expected completions based on habit frequency) * 100, rounded to nearest integer. When any linked habit is completed or a habit log is deleted, goal progress is recalculated and an event is published. Linking a new habit triggers immediate recalculation. A habit can be linked to multiple goals, and a goal can have multiple linked habits.
 
 ## Success Criteria
 
@@ -189,8 +197,10 @@ When a GoalProgressUpdatedEvent is published, two stub consumers process it: Goa
 - The existing Kafka infrastructure (Sprint 5) — topic configuration, consumer error handling, DLQ routing, idempotency via processed_events table — is reused without modification.
 - Database migrations for goals, milestones, and goal-habits are already applied (V7, V8, V9) and do not need changes.
 - Goal status transitions are limited to ACTIVE and COMPLETED. Additional statuses (PAUSED, ABANDONED) are out of scope for this sprint.
-- Progress calculation from linked habits uses simple ratio (completed/total), rounded to integer. Weighted habits are out of scope.
+- Progress calculation from linked habits uses frequency-aware formula (distinct completion dates / expected completions), rounded to integer. Weighted habits are out of scope.
 - Milestones are organizational sub-tasks only; they do not affect goal progress percentage.
-- Manual progress updates are overwritten by the next automatic recalculation when a linked habit is completed.
+- Manual progress updates are overwritten by the next automatic recalculation when a linked habit is completed or a habit log is deleted.
+- GoalProgressConsumer handles both HabitCompletedEvent from habit completion AND habit log deletion identically — it recalculates from current state.
+- Linking a new habit to a goal triggers immediate progress recalculation (synchronous, not via Kafka).
 - Real milestone-based notifications (25%, 50%, 75%, 100% thresholds) are deferred to Sprint 7. Sprint 6 implements stub consumers only.
 - Reminders and scheduled notifications are out of scope (Sprint 7).

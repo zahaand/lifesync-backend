@@ -8,6 +8,7 @@ import ru.zahaand.lifesync.infrastructure.generated.tables.Databasechangelog;
 import ru.zahaand.lifesync.infrastructure.generated.tables.Databasechangeloglock;
 import ru.zahaand.lifesync.infrastructure.generated.tables.GoalHabits;
 import ru.zahaand.lifesync.infrastructure.generated.tables.GoalMilestones;
+import ru.zahaand.lifesync.infrastructure.generated.tables.GoalSentMilestones;
 import ru.zahaand.lifesync.infrastructure.generated.tables.Goals;
 import ru.zahaand.lifesync.infrastructure.generated.tables.HabitLogs;
 import ru.zahaand.lifesync.infrastructure.generated.tables.HabitStreaks;
@@ -15,6 +16,7 @@ import ru.zahaand.lifesync.infrastructure.generated.tables.Habits;
 import ru.zahaand.lifesync.infrastructure.generated.tables.NotificationLogs;
 import ru.zahaand.lifesync.infrastructure.generated.tables.ProcessedEvents;
 import ru.zahaand.lifesync.infrastructure.generated.tables.RefreshTokens;
+import ru.zahaand.lifesync.infrastructure.generated.tables.SentReminders;
 import ru.zahaand.lifesync.infrastructure.generated.tables.UserProfiles;
 import ru.zahaand.lifesync.infrastructure.generated.tables.Users;
 
@@ -44,6 +46,11 @@ public class Tables {
      * The table <code>public.goal_milestones</code>.
      */
     public static final GoalMilestones GOAL_MILESTONES = GoalMilestones.GOAL_MILESTONES;
+
+    /**
+     * The table <code>public.goal_sent_milestones</code>.
+     */
+    public static final GoalSentMilestones GOAL_SENT_MILESTONES = GoalSentMilestones.GOAL_SENT_MILESTONES;
 
     /**
      * The table <code>public.goals</code>.
@@ -79,6 +86,11 @@ public class Tables {
      * The table <code>public.refresh_tokens</code>.
      */
     public static final RefreshTokens REFRESH_TOKENS = RefreshTokens.REFRESH_TOKENS;
+
+    /**
+     * The table <code>public.sent_reminders</code>.
+     */
+    public static final SentReminders SENT_REMINDERS = SentReminders.SENT_REMINDERS;
 
     /**
      * The table <code>public.user_profiles</code>.

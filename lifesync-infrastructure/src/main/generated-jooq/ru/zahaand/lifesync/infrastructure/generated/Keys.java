@@ -9,8 +9,35 @@ import org.jooq.TableField;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
-import ru.zahaand.lifesync.infrastructure.generated.tables.*;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.*;
+
+import ru.zahaand.lifesync.infrastructure.generated.tables.Databasechangeloglock;
+import ru.zahaand.lifesync.infrastructure.generated.tables.GoalHabits;
+import ru.zahaand.lifesync.infrastructure.generated.tables.GoalMilestones;
+import ru.zahaand.lifesync.infrastructure.generated.tables.GoalSentMilestones;
+import ru.zahaand.lifesync.infrastructure.generated.tables.Goals;
+import ru.zahaand.lifesync.infrastructure.generated.tables.HabitLogs;
+import ru.zahaand.lifesync.infrastructure.generated.tables.HabitStreaks;
+import ru.zahaand.lifesync.infrastructure.generated.tables.Habits;
+import ru.zahaand.lifesync.infrastructure.generated.tables.NotificationLogs;
+import ru.zahaand.lifesync.infrastructure.generated.tables.ProcessedEvents;
+import ru.zahaand.lifesync.infrastructure.generated.tables.RefreshTokens;
+import ru.zahaand.lifesync.infrastructure.generated.tables.SentReminders;
+import ru.zahaand.lifesync.infrastructure.generated.tables.UserProfiles;
+import ru.zahaand.lifesync.infrastructure.generated.tables.Users;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.DatabasechangeloglockRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.GoalHabitsRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.GoalMilestonesRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.GoalSentMilestonesRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.GoalsRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.HabitLogsRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.HabitStreaksRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.HabitsRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.NotificationLogsRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.ProcessedEventsRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.RefreshTokensRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.SentRemindersRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.UserProfilesRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.UsersRecord;
 
 
 /**
@@ -28,6 +55,8 @@ public class Keys {
     public static final UniqueKey<GoalHabitsRecord> GOAL_HABITS_PKEY = Internal.createUniqueKey(GoalHabits.GOAL_HABITS, DSL.name("goal_habits_pkey"), new TableField[] { GoalHabits.GOAL_HABITS.ID }, true);
     public static final UniqueKey<GoalHabitsRecord> UQ_GOAL_HABITS_GOAL_HABIT = Internal.createUniqueKey(GoalHabits.GOAL_HABITS, DSL.name("uq_goal_habits_goal_habit"), new TableField[] { GoalHabits.GOAL_HABITS.GOAL_ID, GoalHabits.GOAL_HABITS.HABIT_ID }, true);
     public static final UniqueKey<GoalMilestonesRecord> GOAL_MILESTONES_PKEY = Internal.createUniqueKey(GoalMilestones.GOAL_MILESTONES, DSL.name("goal_milestones_pkey"), new TableField[] { GoalMilestones.GOAL_MILESTONES.ID }, true);
+    public static final UniqueKey<GoalSentMilestonesRecord> GOAL_SENT_MILESTONES_PKEY = Internal.createUniqueKey(GoalSentMilestones.GOAL_SENT_MILESTONES, DSL.name("goal_sent_milestones_pkey"), new TableField[] { GoalSentMilestones.GOAL_SENT_MILESTONES.ID }, true);
+    public static final UniqueKey<GoalSentMilestonesRecord> UQ_GOAL_SENT_MILESTONES_GOAL_THRESHOLD = Internal.createUniqueKey(GoalSentMilestones.GOAL_SENT_MILESTONES, DSL.name("uq_goal_sent_milestones_goal_threshold"), new TableField[] { GoalSentMilestones.GOAL_SENT_MILESTONES.GOAL_ID, GoalSentMilestones.GOAL_SENT_MILESTONES.THRESHOLD }, true);
     public static final UniqueKey<GoalsRecord> GOALS_PKEY = Internal.createUniqueKey(Goals.GOALS, DSL.name("goals_pkey"), new TableField[] { Goals.GOALS.ID }, true);
     public static final UniqueKey<HabitLogsRecord> HABIT_LOGS_PKEY = Internal.createUniqueKey(HabitLogs.HABIT_LOGS, DSL.name("habit_logs_pkey"), new TableField[] { HabitLogs.HABIT_LOGS.ID }, true);
     public static final UniqueKey<HabitLogsRecord> UQ_HABIT_LOGS_HABIT_DATE = Internal.createUniqueKey(HabitLogs.HABIT_LOGS, DSL.name("uq_habit_logs_habit_date"), new TableField[] { HabitLogs.HABIT_LOGS.HABIT_ID, HabitLogs.HABIT_LOGS.LOG_DATE }, true);
@@ -39,6 +68,8 @@ public class Keys {
     public static final UniqueKey<ProcessedEventsRecord> UQ_PROCESSED_EVENTS_EVENT_ID_CONSUMER_GROUP = Internal.createUniqueKey(ProcessedEvents.PROCESSED_EVENTS, DSL.name("uq_processed_events_event_id_consumer_group"), new TableField[] { ProcessedEvents.PROCESSED_EVENTS.EVENT_ID, ProcessedEvents.PROCESSED_EVENTS.CONSUMER_GROUP }, true);
     public static final UniqueKey<RefreshTokensRecord> REFRESH_TOKENS_PKEY = Internal.createUniqueKey(RefreshTokens.REFRESH_TOKENS, DSL.name("refresh_tokens_pkey"), new TableField[] { RefreshTokens.REFRESH_TOKENS.ID }, true);
     public static final UniqueKey<RefreshTokensRecord> UQ_REFRESH_TOKENS_TOKEN_HASH = Internal.createUniqueKey(RefreshTokens.REFRESH_TOKENS, DSL.name("uq_refresh_tokens_token_hash"), new TableField[] { RefreshTokens.REFRESH_TOKENS.TOKEN_HASH }, true);
+    public static final UniqueKey<SentRemindersRecord> SENT_REMINDERS_PKEY = Internal.createUniqueKey(SentReminders.SENT_REMINDERS, DSL.name("sent_reminders_pkey"), new TableField[] { SentReminders.SENT_REMINDERS.ID }, true);
+    public static final UniqueKey<SentRemindersRecord> UQ_SENT_REMINDERS_HABIT_DATE = Internal.createUniqueKey(SentReminders.SENT_REMINDERS, DSL.name("uq_sent_reminders_habit_date"), new TableField[] { SentReminders.SENT_REMINDERS.HABIT_ID, SentReminders.SENT_REMINDERS.SENT_DATE }, true);
     public static final UniqueKey<UserProfilesRecord> UQ_USER_PROFILES_USER_ID = Internal.createUniqueKey(UserProfiles.USER_PROFILES, DSL.name("uq_user_profiles_user_id"), new TableField[] { UserProfiles.USER_PROFILES.USER_ID }, true);
     public static final UniqueKey<UserProfilesRecord> USER_PROFILES_PKEY = Internal.createUniqueKey(UserProfiles.USER_PROFILES, DSL.name("user_profiles_pkey"), new TableField[] { UserProfiles.USER_PROFILES.ID }, true);
     public static final UniqueKey<UsersRecord> UQ_USERS_EMAIL = Internal.createUniqueKey(Users.USERS, DSL.name("uq_users_email"), new TableField[] { Users.USERS.EMAIL }, true);
@@ -52,6 +83,7 @@ public class Keys {
     public static final ForeignKey<GoalHabitsRecord, GoalsRecord> GOAL_HABITS__FK_GOAL_HABITS_GOAL = Internal.createForeignKey(GoalHabits.GOAL_HABITS, DSL.name("fk_goal_habits_goal"), new TableField[] { GoalHabits.GOAL_HABITS.GOAL_ID }, Keys.GOALS_PKEY, new TableField[] { Goals.GOALS.ID }, true);
     public static final ForeignKey<GoalHabitsRecord, HabitsRecord> GOAL_HABITS__FK_GOAL_HABITS_HABIT = Internal.createForeignKey(GoalHabits.GOAL_HABITS, DSL.name("fk_goal_habits_habit"), new TableField[] { GoalHabits.GOAL_HABITS.HABIT_ID }, Keys.HABITS_PKEY, new TableField[] { Habits.HABITS.ID }, true);
     public static final ForeignKey<GoalMilestonesRecord, GoalsRecord> GOAL_MILESTONES__FK_GOAL_MILESTONES_GOAL = Internal.createForeignKey(GoalMilestones.GOAL_MILESTONES, DSL.name("fk_goal_milestones_goal"), new TableField[] { GoalMilestones.GOAL_MILESTONES.GOAL_ID }, Keys.GOALS_PKEY, new TableField[] { Goals.GOALS.ID }, true);
+    public static final ForeignKey<GoalSentMilestonesRecord, GoalsRecord> GOAL_SENT_MILESTONES__GOAL_SENT_MILESTONES_GOAL_ID_FKEY = Internal.createForeignKey(GoalSentMilestones.GOAL_SENT_MILESTONES, DSL.name("goal_sent_milestones_goal_id_fkey"), new TableField[] { GoalSentMilestones.GOAL_SENT_MILESTONES.GOAL_ID }, Keys.GOALS_PKEY, new TableField[] { Goals.GOALS.ID }, true);
     public static final ForeignKey<GoalsRecord, UsersRecord> GOALS__FK_GOALS_USER = Internal.createForeignKey(Goals.GOALS, DSL.name("fk_goals_user"), new TableField[] { Goals.GOALS.USER_ID }, Keys.USERS_PKEY, new TableField[] { Users.USERS.ID }, true);
     public static final ForeignKey<HabitLogsRecord, HabitsRecord> HABIT_LOGS__FK_HABIT_LOGS_HABIT = Internal.createForeignKey(HabitLogs.HABIT_LOGS, DSL.name("fk_habit_logs_habit"), new TableField[] { HabitLogs.HABIT_LOGS.HABIT_ID }, Keys.HABITS_PKEY, new TableField[] { Habits.HABITS.ID }, true);
     public static final ForeignKey<HabitLogsRecord, UsersRecord> HABIT_LOGS__FK_HABIT_LOGS_USER = Internal.createForeignKey(HabitLogs.HABIT_LOGS, DSL.name("fk_habit_logs_user"), new TableField[] { HabitLogs.HABIT_LOGS.USER_ID }, Keys.USERS_PKEY, new TableField[] { Users.USERS.ID }, true);
@@ -59,5 +91,7 @@ public class Keys {
     public static final ForeignKey<HabitsRecord, UsersRecord> HABITS__FK_HABITS_USER = Internal.createForeignKey(Habits.HABITS, DSL.name("fk_habits_user"), new TableField[] { Habits.HABITS.USER_ID }, Keys.USERS_PKEY, new TableField[] { Users.USERS.ID }, true);
     public static final ForeignKey<NotificationLogsRecord, UsersRecord> NOTIFICATION_LOGS__FK_NOTIFICATION_LOGS_USER = Internal.createForeignKey(NotificationLogs.NOTIFICATION_LOGS, DSL.name("fk_notification_logs_user"), new TableField[] { NotificationLogs.NOTIFICATION_LOGS.USER_ID }, Keys.USERS_PKEY, new TableField[] { Users.USERS.ID }, true);
     public static final ForeignKey<RefreshTokensRecord, UsersRecord> REFRESH_TOKENS__FK_REFRESH_TOKENS_USER = Internal.createForeignKey(RefreshTokens.REFRESH_TOKENS, DSL.name("fk_refresh_tokens_user"), new TableField[] { RefreshTokens.REFRESH_TOKENS.USER_ID }, Keys.USERS_PKEY, new TableField[] { Users.USERS.ID }, true);
+    public static final ForeignKey<SentRemindersRecord, HabitsRecord> SENT_REMINDERS__SENT_REMINDERS_HABIT_ID_FKEY = Internal.createForeignKey(SentReminders.SENT_REMINDERS, DSL.name("sent_reminders_habit_id_fkey"), new TableField[] { SentReminders.SENT_REMINDERS.HABIT_ID }, Keys.HABITS_PKEY, new TableField[] { Habits.HABITS.ID }, true);
+    public static final ForeignKey<SentRemindersRecord, UsersRecord> SENT_REMINDERS__SENT_REMINDERS_USER_ID_FKEY = Internal.createForeignKey(SentReminders.SENT_REMINDERS, DSL.name("sent_reminders_user_id_fkey"), new TableField[] { SentReminders.SENT_REMINDERS.USER_ID }, Keys.USERS_PKEY, new TableField[] { Users.USERS.ID }, true);
     public static final ForeignKey<UserProfilesRecord, UsersRecord> USER_PROFILES__FK_USER_PROFILES_USER = Internal.createForeignKey(UserProfiles.USER_PROFILES, DSL.name("fk_user_profiles_user"), new TableField[] { UserProfiles.USER_PROFILES.USER_ID }, Keys.USERS_PKEY, new TableField[] { Users.USERS.ID }, true);
 }

@@ -4,12 +4,13 @@
 package ru.zahaand.lifesync.infrastructure.generated.tables.records;
 
 
-import org.jooq.Record1;
-import org.jooq.impl.UpdatableRecordImpl;
-import ru.zahaand.lifesync.infrastructure.generated.tables.ProcessedEvents;
-
 import java.time.OffsetDateTime;
 import java.util.UUID;
+
+import org.jooq.Record1;
+import org.jooq.impl.UpdatableRecordImpl;
+
+import ru.zahaand.lifesync.infrastructure.generated.tables.ProcessedEvents;
 
 
 /**

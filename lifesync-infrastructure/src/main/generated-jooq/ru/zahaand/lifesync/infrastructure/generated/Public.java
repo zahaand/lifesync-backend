@@ -15,6 +15,7 @@ import ru.zahaand.lifesync.infrastructure.generated.tables.Databasechangelog;
 import ru.zahaand.lifesync.infrastructure.generated.tables.Databasechangeloglock;
 import ru.zahaand.lifesync.infrastructure.generated.tables.GoalHabits;
 import ru.zahaand.lifesync.infrastructure.generated.tables.GoalMilestones;
+import ru.zahaand.lifesync.infrastructure.generated.tables.GoalSentMilestones;
 import ru.zahaand.lifesync.infrastructure.generated.tables.Goals;
 import ru.zahaand.lifesync.infrastructure.generated.tables.HabitLogs;
 import ru.zahaand.lifesync.infrastructure.generated.tables.HabitStreaks;
@@ -22,6 +23,7 @@ import ru.zahaand.lifesync.infrastructure.generated.tables.Habits;
 import ru.zahaand.lifesync.infrastructure.generated.tables.NotificationLogs;
 import ru.zahaand.lifesync.infrastructure.generated.tables.ProcessedEvents;
 import ru.zahaand.lifesync.infrastructure.generated.tables.RefreshTokens;
+import ru.zahaand.lifesync.infrastructure.generated.tables.SentReminders;
 import ru.zahaand.lifesync.infrastructure.generated.tables.UserProfiles;
 import ru.zahaand.lifesync.infrastructure.generated.tables.Users;
 
@@ -60,6 +62,11 @@ public class Public extends SchemaImpl {
     public final GoalMilestones GOAL_MILESTONES = GoalMilestones.GOAL_MILESTONES;
 
     /**
+     * The table <code>public.goal_sent_milestones</code>.
+     */
+    public final GoalSentMilestones GOAL_SENT_MILESTONES = GoalSentMilestones.GOAL_SENT_MILESTONES;
+
+    /**
      * The table <code>public.goals</code>.
      */
     public final Goals GOALS = Goals.GOALS;
@@ -95,6 +102,11 @@ public class Public extends SchemaImpl {
     public final RefreshTokens REFRESH_TOKENS = RefreshTokens.REFRESH_TOKENS;
 
     /**
+     * The table <code>public.sent_reminders</code>.
+     */
+    public final SentReminders SENT_REMINDERS = SentReminders.SENT_REMINDERS;
+
+    /**
      * The table <code>public.user_profiles</code>.
      */
     public final UserProfiles USER_PROFILES = UserProfiles.USER_PROFILES;
@@ -124,6 +136,7 @@ public class Public extends SchemaImpl {
             Databasechangeloglock.DATABASECHANGELOGLOCK,
             GoalHabits.GOAL_HABITS,
             GoalMilestones.GOAL_MILESTONES,
+            GoalSentMilestones.GOAL_SENT_MILESTONES,
             Goals.GOALS,
             HabitLogs.HABIT_LOGS,
             HabitStreaks.HABIT_STREAKS,
@@ -131,6 +144,7 @@ public class Public extends SchemaImpl {
             NotificationLogs.NOTIFICATION_LOGS,
             ProcessedEvents.PROCESSED_EVENTS,
             RefreshTokens.REFRESH_TOKENS,
+            SentReminders.SENT_REMINDERS,
             UserProfiles.USER_PROFILES,
             Users.USERS
         );

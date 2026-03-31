@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="V19-create-goal-sent-milestones" author="zahaand">
+        <createTable tableName="goal_sent_milestones">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="goal_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="threshold" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sent_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamptz" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="goal_sent_milestones" baseColumnNames="goal_id"
+                                 constraintName="fk_goal_sent_milestones_goal"
+                                 referencedTableName="goals" referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <addUniqueConstraint tableName="goal_sent_milestones" columnNames="goal_id, threshold"
+                             constraintName="uq_goal_sent_milestones_goal_threshold"/>
+
+        <createIndex tableName="goal_sent_milestones" indexName="idx_goal_sent_milestones_goal_id">
+            <column name="goal_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropAllForeignKeyConstraints baseTableName="goal_sent_milestones"/>
+            <dropTable tableName="goal_sent_milestones"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

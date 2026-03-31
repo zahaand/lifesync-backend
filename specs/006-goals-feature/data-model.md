@@ -122,7 +122,7 @@ ACTIVE, COMPLETED
 ```
 save(Goal) → Goal
 findByIdAndUserId(GoalId, UUID userId) → Optional<Goal>
-findAllActiveByUserId(UUID userId, int page, int size) → GoalPage
+findAllByUserId(UUID userId, GoalStatus status, int page, int size) → GoalPage  // status nullable — null returns all non-deleted goals
 update(Goal) → Goal
 
 record GoalPage(List<Goal> content, long totalElements, int totalPages, int page, int size)
@@ -146,7 +146,15 @@ findAllByGoalId(GoalId) → List<GoalHabitLink>
 findActiveGoalIdsByHabitId(HabitId) → List<GoalId>  // goals where deleted_at IS NULL
 deleteByGoalIdAndHabitId(GoalId, HabitId) → void
 countTotalByGoalId(GoalId) → int
-countCompletedByGoalIdAndDate(GoalId, LocalDate) → int  // joins with habit_logs
+countCompletedDaysByGoalId(GoalId) → int  // distinct dates with at least one linked habit completed (joins goal_habits + habit_logs where deleted_at IS NULL)
+countExpectedCompletionsByGoalId(GoalId, LocalDate createdAt, LocalDate endDate) → int
+  // Counts expected habit performances in [createdAt, endDate] per linked habit's frequency:
+  //   DAILY: count all days in period
+  //   WEEKLY: count number of weeks (Monday-based) in period
+  //   CUSTOM: count days in period that match habit's targetDaysOfWeek
+  // endDate = min(today, goal.targetDate) if targetDate exists, else today
+  // Returns 0 only when no habits are linked (or all habits have CUSTOM with no matching days in period)
+  // Infrastructure joins goal_habits → habits (for frequency + target_days_of_week)
 ```
 
 ## Domain Exceptions
@@ -174,9 +182,14 @@ habit.log.completed topic
     → RecalculateGoalProgressUseCase (app)
       → GoalHabitLinkRepository.findActiveGoalIdsByHabitId(habitId)
       → For each goalId:
-          total = countTotalByGoalId(goalId)
-          completed = countCompletedByGoalIdAndDate(goalId, logDate)
-          progress = Math.round((float) completed / total * 100)
+          totalLinked = countTotalByGoalId(goalId)
+          if totalLinked == 0 → skip (no automatic calculation — manual-only mode)
+          endDate = min(today, goal.targetDate) if targetDate exists, else today
+          completedDays = countCompletedDaysByGoalId(goalId)
+          expectedCompletions = countExpectedCompletionsByGoalId(goalId, goal.createdAt, endDate)
+          if expectedCompletions == 0 → set progress = 0, skip event (habits exist but none expected yet)
+          progress = Math.round((float) completedDays / expectedCompletions * 100)
+          progress = Math.min(progress, 100)  // cap at 100
           goal.updateProgress(progress, now)
           goalRepository.update(goal)
           → ApplicationEventPublisher.publishEvent(GoalProgressUpdatedEvent)

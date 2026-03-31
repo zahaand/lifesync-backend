@@ -44,9 +44,9 @@ Full goals feature: CRUD operations, milestone management, habit-goal linking wi
 
 | # | Principle | Status | Notes |
 |---|-----------|--------|-------|
-| I | Hexagonal Architecture | PASS | `GoalHabitLinkRepository.countCompletedByGoalIdAndDate()` — port in domain, joins in infra. Domain has no infra imports. |
-| II | API First | PASS | All 12 endpoints and 10 schemas designed for addition to the single `lifesync-api.yaml`. One YAML = one source of truth (Principle II). |
-| III | User Data Isolation | PASS | `findByIdAndUserId`, `findAllActiveByUserId` patterns. Ownership check before every mutation. Consumer uses userId from event. |
+| I | Hexagonal Architecture | PASS | `GoalHabitLinkRepository.countCompletedDaysByGoalId()` / `countExpectedCompletionsByGoalId()` — ports in domain, joins in infra. Domain has no infra imports. |
+| II | API First | PASS | All 12 endpoints and 11 schemas designed for addition to the single `lifesync-api.yaml`. One YAML = one source of truth (Principle II). |
+| III | User Data Isolation | PASS | `findByIdAndUserId`, `findAllByUserId` patterns. Ownership check before every mutation. Consumer uses userId from event. |
 | V | Liquibase Migrations | PASS | Verified existing migrations: V7 goals, V8 goal_milestones, V9 goal_habits — all columns match domain model exactly. |
 | XII | OpenAPI Documentation | PASS | All 12 endpoints documented with summary, description (business rules + how-to-test), examples, error codes with explanations, field descriptions on all schemas. |
 
@@ -153,7 +153,8 @@ lifesync-app/src/main/java/ru/zahaand/lifesync/app/config/
 
 ### Phase 4: Infrastructure Layer — Repositories
 - JooqGoalRepository, JooqGoalMilestoneRepository, JooqGoalHabitLinkRepository
-- `countCompletedByGoalIdAndDate` joins goal_habits with habit_logs for progress calculation
+- `countCompletedDaysByGoalId` joins goal_habits with habit_logs for distinct completion dates
+- `countExpectedCompletionsByGoalId(GoalId, LocalDate createdAt, LocalDate endDate)` calculates expected completions per habit frequency (DAILY/WEEKLY/CUSTOM) in [createdAt, endDate], joins goal_habits → habits
 - All reads include `DELETED_AT.isNull()` and `userId` predicates where applicable
 - **Constitution**: Principle III (userId isolation), V (no DDL — queries only)
 
@@ -183,7 +184,7 @@ lifesync-app/src/main/java/ru/zahaand/lifesync/app/config/
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Progress calculation | Habit-based ratio per logDate | Spec clarification: (completed/total linked habits) * 100 |
+| Progress calculation | Frequency-aware formula | (distinct dates with at least one linked habit completed / total expected completions based on habit frequency) * 100, rounded via Math.round |
 | Cross-domain query | GoalHabitLinkRepository port with infra-level join | Clean hexagonal: domain defines contract, infra handles SQL join |
 | Manual progress events | Same ApplicationEventPublisher path | Consistent downstream processing for both manual and automatic |
 | GetGoal enrichment | Return linked habit IDs (not full objects) | Avoids cross-domain entity loading; frontend fetches details separately |

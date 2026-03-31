@@ -68,7 +68,7 @@ A user links one or more of their existing habits to a goal. The system automati
 
 1. **Given** a user has a goal "Run a marathon" and a habit "Morning run", **When** they link the habit to the goal, **Then** the habit appears in the goal's linked habits list.
 2. **Given** a habit is already linked to a goal, **When** the user tries to link it again, **Then** the system rejects the duplicate with an appropriate error.
-3. **Given** a goal has 2 linked habits, **When** the user unlinks one, **Then** only the remaining habit is shown and progress is recalculated.
+3. **Given** a goal has 2 linked habits, **When** the user unlinks one, **Then** only the remaining habit is shown and progress is immediately recalculated from the remaining linked habits. If no habits remain linked, progress retains its last value (manual-only mode).
 4. **Given** a user tries to link another user's habit to their goal, **Then** the system denies access.
 5. **Given** a habit is deleted (soft-deleted), **Then** it is automatically unlinked from all goals via database cascade.
 6. **Given** a goal with 4 linked habits (2 completed today), **When** the user views the goal, **Then** progress is calculated using the frequency-aware formula and reflects actual completion ratio.
@@ -197,7 +197,7 @@ When a GoalProgressUpdatedEvent is published, two stub consumers process it: Goa
 - The existing Kafka infrastructure (Sprint 5) — topic configuration, consumer error handling, DLQ routing, idempotency via processed_events table — is reused without modification.
 - Database migrations for goals, milestones, and goal-habits are already applied (V7, V8, V9) and do not need changes.
 - Goal status transitions are limited to ACTIVE and COMPLETED. Additional statuses (PAUSED, ABANDONED) are out of scope for this sprint.
-- Progress calculation from linked habits uses frequency-aware formula (distinct completion dates / expected completions), rounded to integer. Weighted habits are out of scope.
+- Progress calculation from linked habits uses frequency-aware formula (distinct completion dates / expected completions), rounded to integer via Math.round. Expected completions are calculated per linked habit's frequency over [goal.createdAt, min(today, targetDate)]: DAILY = all days in period, WEEKLY = number of Monday-based weeks, CUSTOM = days matching targetDaysOfWeek. If expected completions = 0 (e.g. goal created today with no expected completions yet), progress defaults to 0. Weighted habits are out of scope.
 - Milestones are organizational sub-tasks only; they do not affect goal progress percentage.
 - Manual progress updates are overwritten by the next automatic recalculation when a linked habit is completed or a habit log is deleted.
 - GoalProgressConsumer handles both HabitCompletedEvent from habit completion AND habit log deletion identically — it recalculates from current state.

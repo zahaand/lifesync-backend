@@ -4,11 +4,12 @@
 
 ## R-001: Progress Calculation Semantics
 
-**Decision**: Goal progress = (count of linked habits with a `habit_logs` entry for the event's `logDate` where `deleted_at IS NULL`) / (total linked habits count) * 100, rounded to nearest integer.
+**Decision**: Goal progress = (distinct dates with at least one linked habit completed / total expected completions based on habit frequency) * 100, rounded to nearest integer via `Math.round`. If no habits are linked (`countTotalByGoalId` returns 0), automatic calculation is skipped entirely — progress retains its current value and is manual-only.
 
-**Rationale**: `habit_logs` has no `completed` boolean — row existence for `(habit_id, log_date)` IS the completion signal. The `HabitCompletedEvent.logDate` field determines which date to evaluate. Progress reflects the most recent recalculation's date context.
+**Rationale**: Frequency-aware formula accounts for habits with different schedules (daily, weekly, etc.). `habit_logs` has no `completed` boolean — row existence for `(habit_id, log_date)` where `deleted_at IS NULL` IS the completion signal. The formula counts distinct completion dates across all linked habits and divides by the expected number of completions derived from each habit's frequency setting. Progress reflects the cumulative completion ratio, not a single-date snapshot.
 
 **Alternatives considered**:
+- Simple ratio per logDate `(completed habits today / total linked habits) * 100`: rejected — does not account for habit frequency, gives misleading progress for habits with different schedules.
 - Cumulative all-time completion: rejected — progress would never decrease, not useful for daily habit tracking.
 - Today-only calculation: rejected — events can carry non-today logDates (retroactive logging).
 
@@ -26,7 +27,7 @@
 
 ## R-003: GoalHabitLinkRepository Cross-Domain Query
 
-**Decision**: Add `countCompletedByGoalIdAndDate(GoalId, LocalDate)` and `countTotalByGoalId(GoalId)` methods to `GoalHabitLinkRepository` domain port. Infrastructure implementation joins `goal_habits` with `habit_logs`.
+**Decision**: Add `countCompletedDaysByGoalId(GoalId)`, `countExpectedCompletionsByGoalId(GoalId, LocalDate createdAt, LocalDate endDate)`, and `countTotalByGoalId(GoalId)` methods to `GoalHabitLinkRepository` domain port. `countExpectedCompletionsByGoalId` computes expected performances in [createdAt, endDate] per linked habit's frequency: DAILY = all days, WEEKLY = Monday-based weeks, CUSTOM = days matching targetDaysOfWeek. endDate = min(today, goal.targetDate). Infrastructure implementation joins `goal_habits` with `habit_logs` and `habits` (for frequency + target_days_of_week).
 
 **Rationale**: The port interface declares the contract (what data the application needs); the infrastructure implements it (how to get it, including cross-table joins). This keeps the domain clean while allowing efficient single-query counting.
 

@@ -28,6 +28,8 @@ tags:
     description: Admin user management (ADMIN role required)
   - name: Habit
     description: Habit tracking, completion logs, and streaks (authenticated)
+  - name: Goal
+    description: Goal management, milestones, habit-goal linking, and progress tracking (authenticated)
 
 paths:
   /api/v1/auth/register:
@@ -1170,6 +1172,785 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponseDto'
 
+  /api/v1/goals:
+    get:
+      tags: [Goal]
+      operationId: getGoals
+      summary: List user goals
+      description: |
+        Returns a paginated list of the authenticated user's goals. Only **non-deleted** goals
+        are returned. Soft-deleted goals are permanently excluded from this list.
+
+        Use the `status` parameter to filter by goal status:
+        - `status=ACTIVE` — only goals in progress
+        - `status=COMPLETED` — only goals that reached 100% progress
+        - Omit `status` — returns both active and completed
+
+        Sorted by `created_at DESC` (newest goals first).
+
+        **How to test:**
+        1. Create a few goals via `POST /goals`
+        2. Call `GET /goals` — see all your goals
+        3. Try `GET /goals?status=ACTIVE&page=0&size=5`
+        4. Manually set a goal progress to 100% via `PATCH /goals/{goalId}/progress` — it becomes COMPLETED
+        5. Filter by `status=COMPLETED` to confirm
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ACTIVE, COMPLETED]
+          description: "Filter by goal status: `ACTIVE` = in progress, `COMPLETED` = reached 100% progress"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: "Page number, 0-indexed"
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: "Number of results per page (default: 20, max: 100)"
+      responses:
+        '200':
+          description: Paginated list of non-deleted goals.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalPageResponseDto'
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+    post:
+      tags: [Goal]
+      operationId: createGoal
+      summary: Create a new goal
+      description: |
+        Creates a new goal for the authenticated user.
+
+        **Business rules:**
+        - `title` is required, 1–200 characters.
+        - `description` is optional, free-text.
+        - `targetDate` is optional. Goals can be open-ended or have a specific deadline.
+          Past dates are allowed (for retroactive goal records).
+        - The goal is created with status `ACTIVE` and progress `0%`.
+        - Progress is controlled via manual updates (`PATCH /goals/{goalId}/progress`)
+          or automatic calculation from linked habits.
+
+        **How to test:**
+        1. Create a goal with title and target date (see "Goal with deadline" example)
+        2. Verify 201 response with status ACTIVE and progress 0
+        3. Create a goal without target date (see "Open-ended goal" example)
+        4. Try creating without a title — expect 400
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalCreateRequestDto'
+            examples:
+              withDeadline:
+                summary: Goal with deadline
+                value:
+                  title: Run a marathon
+                  description: Complete a full 42km marathon by September
+                  targetDate: "2026-09-15"
+              openEnded:
+                summary: Open-ended goal
+                value:
+                  title: Learn Spanish
+                  description: Reach conversational fluency
+      responses:
+        '201':
+          description: Goal created successfully with status ACTIVE and progress 0%.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalResponseDto'
+        '400':
+          description: |
+            Validation error. Possible reasons:
+            - `title` is missing or exceeds 200 characters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+  /api/v1/goals/{goalId}:
+    get:
+      tags: [Goal]
+      operationId: getGoal
+      summary: Get goal with full details
+      description: |
+        Returns full details of a specific goal owned by the authenticated user,
+        including milestones and linked habit IDs.
+
+        Returns 404 if the goal does not exist **or** belongs to another user.
+        This prevents information leakage — you cannot determine whether a goal ID
+        belongs to someone else or simply does not exist.
+
+        **How to test:**
+        1. Create a goal and note the `id` from the response
+        2. Call this endpoint with that ID — see full details including milestones and linkedHabitIds
+        3. Add milestones and link habits, then call again to see them in the response
+        4. Try a random UUID — expect 404
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+      responses:
+        '200':
+          description: Full goal details including milestones and linked habit IDs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalDetailResponseDto'
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal not found. Either the goal does not exist or it belongs to another user.
+            The response is intentionally identical in both cases to prevent information leakage.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+    patch:
+      tags: [Goal]
+      operationId: updateGoal
+      summary: Update a goal
+      description: |
+        Updates one or more properties of an existing goal. Follows **JSON Merge Patch**
+        semantics (RFC 7396):
+        - Field present with a value → **updates** that field
+        - Field absent from the request → **no change**
+        - Field present with `null` → **clears** that field (for nullable fields like `description`, `targetDate`)
+
+        At least one field must be provided.
+
+        **Note:** This endpoint updates goal metadata (title, description, targetDate, status).
+        To update goal progress, use `PATCH /goals/{goalId}/progress` instead.
+
+        **How to test:**
+        1. Create a goal and note the ID
+        2. Update only the title (see "Update title" example)
+        3. Clear the description by sending `null` (see "Clear description" example)
+        4. Change status to COMPLETED (see "Mark completed" example)
+        5. Verify each change with `GET /goals/{goalId}`
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalUpdateRequestDto'
+            examples:
+              updateTitle:
+                summary: Update title
+                value:
+                  title: Run a half-marathon
+              clearDescription:
+                summary: Clear description
+                value:
+                  description: null
+              markCompleted:
+                summary: Mark completed
+                value:
+                  status: COMPLETED
+      responses:
+        '200':
+          description: Goal updated. Returns the full goal with all current values.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalResponseDto'
+        '400':
+          description: |
+            Validation error. Possible reasons:
+            - No fields provided (empty body)
+            - `title` exceeds 200 characters
+            - `status` is not one of ACTIVE, COMPLETED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal not found or not owned by the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+    delete:
+      tags: [Goal]
+      operationId: deleteGoal
+      summary: Delete a goal
+      description: |
+        **Soft-deletes** a goal owned by the authenticated user. The goal data is retained
+        in the database but excluded from all listings and queries.
+
+        Milestones belonging to this goal are also soft-deleted. Habit-goal links are
+        removed via database cascade.
+
+        **This action cannot be undone via the API.**
+
+        **How to test:**
+        1. Create a goal
+        2. Call DELETE on it — expect 204
+        3. Try `GET /goals/{goalId}` — expect 404
+        4. Verify the goal is gone from `GET /goals` listing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+      responses:
+        '204':
+          description: Goal soft-deleted. It will no longer appear in listings.
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal not found or not owned by the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+  /api/v1/goals/{goalId}/progress:
+    patch:
+      tags: [Goal]
+      operationId: updateGoalProgress
+      summary: Manually update goal progress
+      description: |
+        Directly sets a goal's progress percentage (0–100). This is the **manual progress**
+        endpoint, useful for goals without linked habits or when the user wants to override
+        the automatic calculation.
+
+        **Business rules:**
+        - `progress` must be an integer between 0 and 100 (inclusive).
+        - When progress reaches **100**, the goal status automatically changes to `COMPLETED`.
+        - If the goal has linked habits, the next automatic recalculation (triggered by a
+          habit completion) will **overwrite** this manual value.
+        - A `GoalProgressUpdatedEvent` is published for downstream consumers.
+
+        **Note:** This is distinct from `PATCH /goals/{goalId}` which updates metadata
+        (title, description, targetDate, status). Use this endpoint specifically for progress.
+
+        **How to test:**
+        1. Create a goal (starts at progress 0%)
+        2. Call this endpoint with `progress: 50` — verify 200 with progress 50
+        3. Call with `progress: 100` — verify status changes to COMPLETED
+        4. Try `progress: 150` — expect 400
+        5. Try `progress: -1` — expect 400
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalProgressUpdateRequestDto'
+            examples:
+              halfwayDone:
+                summary: Set progress to 50%
+                value:
+                  progress: 50
+              completed:
+                summary: Complete the goal
+                value:
+                  progress: 100
+      responses:
+        '200':
+          description: Progress updated. Returns the full goal with new progress and possibly updated status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalResponseDto'
+        '400':
+          description: |
+            Validation error. `progress` must be an integer between 0 and 100 (inclusive).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal not found or not owned by the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+  /api/v1/goals/{goalId}/milestones:
+    post:
+      tags: [Goal]
+      operationId: addMilestone
+      summary: Add a milestone to a goal
+      description: |
+        Adds a new milestone (sub-task) to a goal. Milestones provide organizational
+        structure within a goal but do **not** affect the goal's progress percentage.
+
+        **Business rules:**
+        - `title` is required, 1–200 characters.
+        - `sortOrder` determines the display position (lower numbers first). Defaults to 0.
+        - Milestones are created in incomplete state (`completed: false`).
+        - The parent goal must exist and be owned by the authenticated user.
+
+        **How to test:**
+        1. Create a goal and note its ID
+        2. Add milestones with different sort orders (see examples)
+        3. Call `GET /goals/{goalId}` to see milestones in the response
+        4. Try adding a milestone to a non-existent goal — expect 404
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MilestoneCreateRequestDto'
+            examples:
+              firstMilestone:
+                summary: First milestone
+                value:
+                  title: Register for the race
+                  sortOrder: 1
+              secondMilestone:
+                summary: Second milestone
+                value:
+                  title: Complete 10K training
+                  sortOrder: 2
+      responses:
+        '201':
+          description: Milestone created successfully in incomplete state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MilestoneResponseDto'
+        '400':
+          description: |
+            Validation error. Possible reasons:
+            - `title` is missing or exceeds 200 characters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal not found or not owned by the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+  /api/v1/goals/{goalId}/milestones/{milestoneId}:
+    patch:
+      tags: [Goal]
+      operationId: updateMilestone
+      summary: Update a milestone
+      description: |
+        Updates a milestone's properties. Supports partial updates using JSON Merge Patch semantics.
+
+        **Business rules:**
+        - Set `completed: true` to mark the milestone as done (sets `completedAt` timestamp).
+        - Set `completed: false` to uncheck the milestone (clears `completedAt`).
+        - `title` and `sortOrder` can be updated independently.
+        - Milestones do **not** affect goal progress — they are organizational only.
+        - The parent goal must exist and be owned by the authenticated user.
+
+        **How to test:**
+        1. Add a milestone to a goal
+        2. Mark it complete (see "Mark complete" example)
+        3. Verify `completedAt` is set in the response
+        4. Uncheck it (see "Uncheck" example) — `completedAt` should be null
+        5. Update the title (see "Update title" example)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+        - name: milestoneId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Milestone UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MilestoneUpdateRequestDto'
+            examples:
+              markComplete:
+                summary: Mark complete
+                value:
+                  completed: true
+              uncheck:
+                summary: Uncheck milestone
+                value:
+                  completed: false
+              updateTitle:
+                summary: Update title
+                value:
+                  title: Complete half-marathon training
+                  sortOrder: 2
+      responses:
+        '200':
+          description: Milestone updated. Returns the full milestone with all current values.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MilestoneResponseDto'
+        '400':
+          description: |
+            Validation error. Possible reasons:
+            - `title` exceeds 200 characters
+            - No fields provided (empty body)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal or milestone not found. Either the resource does not exist,
+            the goal belongs to another user, or the milestone does not belong to this goal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+    delete:
+      tags: [Goal]
+      operationId: deleteMilestone
+      summary: Delete a milestone
+      description: |
+        **Soft-deletes** a milestone from a goal. The milestone data is retained in the
+        database but excluded from all listings.
+
+        **How to test:**
+        1. Add a milestone to a goal
+        2. Call DELETE on it — expect 204
+        3. Call `GET /goals/{goalId}` — the milestone should be gone from the list
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+        - name: milestoneId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Milestone UUID
+      responses:
+        '204':
+          description: Milestone soft-deleted.
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal or milestone not found, or goal not owned by the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+  /api/v1/goals/{goalId}/habits:
+    post:
+      tags: [Goal]
+      operationId: linkHabitToGoal
+      summary: Link a habit to a goal
+      description: |
+        Links an existing habit to a goal. Both the goal and the habit must be owned by the
+        authenticated user. A habit can be linked to multiple goals, and a goal can have
+        multiple linked habits.
+
+        **Business rules:**
+        - The user must own both the goal and the habit.
+        - Duplicate links (same goal + habit combination) are rejected with 409.
+        - After linking, goal progress is **immediately recalculated** using the frequency-aware
+          formula based on all currently linked habits' completion logs.
+        - If this is the first habit linked to the goal, the goal transitions from manual-only
+          progress to automatic progress tracking.
+
+        **How to test:**
+        1. Create a goal and a habit
+        2. Link the habit to the goal — expect 201
+        3. Try linking the same habit again — expect 409
+        4. Check `GET /goals/{goalId}` — the habit ID should appear in `linkedHabitIds`
+        5. Complete the linked habit, then check goal progress — it should update automatically
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalHabitLinkRequestDto'
+            examples:
+              linkHabit:
+                summary: Link a habit
+                value:
+                  habitId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      responses:
+        '201':
+          description: Habit linked to goal. Goal progress is immediately recalculated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoalHabitLinkResponseDto'
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal or habit not found. Either the resource does not exist or it belongs to
+            another user. The response is intentionally identical in both cases.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '409':
+          description: |
+            Conflict. This habit is already linked to this goal.
+            Each habit can only be linked once per goal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+    get:
+      tags: [Goal]
+      operationId: getGoalHabitLinks
+      summary: List habits linked to a goal
+      description: |
+        Returns all habits currently linked to a goal. The goal must be owned by the
+        authenticated user.
+
+        **How to test:**
+        1. Create a goal and link several habits to it
+        2. Call this endpoint — see all linked habits with their link timestamps
+        3. Unlink one, then call again — it should be gone
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+      responses:
+        '200':
+          description: List of habit-goal links for this goal.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GoalHabitLinkResponseDto'
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal not found or not owned by the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
+  /api/v1/goals/{goalId}/habits/{habitId}:
+    delete:
+      tags: [Goal]
+      operationId: unlinkHabitFromGoal
+      summary: Unlink a habit from a goal
+      description: |
+        Removes the link between a habit and a goal. The habit itself is not affected.
+
+        **Business rules:**
+        - After unlinking, goal progress is **immediately recalculated** from the remaining
+          linked habits.
+        - If no habits remain linked, the goal enters manual-only mode — progress retains
+          its last value and is only changeable via `PATCH /goals/{goalId}/progress`.
+
+        **How to test:**
+        1. Link a habit to a goal
+        2. Call DELETE to unlink — expect 204
+        3. Call `GET /goals/{goalId}/habits` — the habit should be gone
+        4. Check goal progress — it should be recalculated from remaining habits
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: goalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Goal UUID
+        - name: habitId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Habit UUID
+      responses:
+        '204':
+          description: Habit unlinked from goal. Progress recalculated from remaining linked habits.
+        '401':
+          description: |
+            Not authenticated. Access token is missing, invalid, or expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+        '404':
+          description: |
+            Goal not found, goal not owned by the authenticated user, or the habit
+            is not linked to this goal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponseDto'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1612,6 +2393,244 @@ components:
         size:
           type: integer
           description: "Page size (number of items per page)."
+
+    GoalCreateRequestDto:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: "Goal title. 1–200 characters. Describes the long-term objective."
+        description:
+          type: string
+          description: "Optional detailed description of the goal."
+        targetDate:
+          type: string
+          format: date
+          description: "Optional deadline for the goal in ISO 8601 format (`YYYY-MM-DD`). Past dates are allowed for retroactive records."
+
+    GoalUpdateRequestDto:
+      type: object
+      minProperties: 1
+      description: "At least one field must be provided. Follows JSON Merge Patch semantics (RFC 7396). Send `null` to clear optional fields."
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: "New goal title. 1–200 characters."
+        description:
+          type:
+            - string
+            - 'null'
+          description: "New description. Send `null` to clear."
+        targetDate:
+          type:
+            - string
+            - 'null'
+          format: date
+          description: "New target date in ISO 8601 format (`YYYY-MM-DD`). Send `null` to remove the deadline."
+        status:
+          type: string
+          enum: [ACTIVE, COMPLETED]
+          description: "New goal status. `ACTIVE` = in progress, `COMPLETED` = goal achieved."
+
+    GoalProgressUpdateRequestDto:
+      type: object
+      required: [progress]
+      properties:
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: "Goal progress percentage (0–100). Setting to 100 automatically changes goal status to COMPLETED."
+
+    GoalResponseDto:
+      type: object
+      required: [id, title, status, progress, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: "Unique goal identifier."
+        title:
+          type: string
+          description: "Goal title describing the long-term objective."
+        description:
+          type: string
+          description: "Detailed goal description. May be null."
+        targetDate:
+          type: string
+          format: date
+          description: "Goal deadline in ISO 8601 format (`YYYY-MM-DD`). Null if no deadline is set."
+        status:
+          type: string
+          enum: [ACTIVE, COMPLETED]
+          description: "Current goal status. `ACTIVE` = in progress, `COMPLETED` = reached 100% progress."
+        progress:
+          type: integer
+          description: "Current progress percentage (0–100). Updated automatically from linked habits or manually via the progress endpoint."
+        createdAt:
+          type: string
+          format: date-time
+          description: "Goal creation timestamp (ISO 8601)."
+
+    GoalDetailResponseDto:
+      type: object
+      required: [id, title, status, progress, milestones, linkedHabitIds, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: "Unique goal identifier."
+        title:
+          type: string
+          description: "Goal title describing the long-term objective."
+        description:
+          type: string
+          description: "Detailed goal description. May be null."
+        targetDate:
+          type: string
+          format: date
+          description: "Goal deadline in ISO 8601 format (`YYYY-MM-DD`). Null if no deadline is set."
+        status:
+          type: string
+          enum: [ACTIVE, COMPLETED]
+          description: "Current goal status. `ACTIVE` = in progress, `COMPLETED` = reached 100% progress."
+        progress:
+          type: integer
+          description: "Current progress percentage (0–100). Updated automatically from linked habits or manually."
+        milestones:
+          type: array
+          items:
+            $ref: '#/components/schemas/MilestoneResponseDto'
+          description: "List of active (non-deleted) milestones for this goal, ordered by sortOrder."
+        linkedHabitIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: "List of habit UUIDs currently linked to this goal. Use `GET /habits/{id}` to fetch habit details."
+        createdAt:
+          type: string
+          format: date-time
+          description: "Goal creation timestamp (ISO 8601)."
+
+    GoalPageResponseDto:
+      type: object
+      required: [content, totalElements, totalPages, page, size]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoalResponseDto'
+          description: "List of goals on the current page."
+        totalElements:
+          type: integer
+          format: int64
+          description: "Total number of goals matching the filter criteria."
+        totalPages:
+          type: integer
+          description: "Total number of pages."
+        page:
+          type: integer
+          description: "Current page number (0-indexed)."
+        size:
+          type: integer
+          description: "Page size (number of items per page)."
+
+    MilestoneCreateRequestDto:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: "Milestone title. 1–200 characters. Describes a sub-task within the goal."
+        sortOrder:
+          type: integer
+          default: 0
+          description: "Display position of the milestone within the goal. Lower numbers appear first."
+
+    MilestoneUpdateRequestDto:
+      type: object
+      minProperties: 1
+      description: "At least one field must be provided. Supports partial updates."
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: "New milestone title. 1–200 characters."
+        sortOrder:
+          type: integer
+          description: "New display position within the goal."
+        completed:
+          type: boolean
+          description: "Set to `true` to mark milestone as done (sets `completedAt`). Set to `false` to uncheck (clears `completedAt`)."
+
+    MilestoneResponseDto:
+      type: object
+      required: [id, goalId, title, sortOrder, completed, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: "Unique milestone identifier."
+        goalId:
+          type: string
+          format: uuid
+          description: "ID of the parent goal this milestone belongs to."
+        title:
+          type: string
+          description: "Milestone title describing the sub-task."
+        sortOrder:
+          type: integer
+          description: "Display position within the goal. Lower numbers appear first."
+        completed:
+          type: boolean
+          description: "`true` = milestone is done, `false` = still pending."
+        completedAt:
+          type: string
+          format: date-time
+          description: "Timestamp when the milestone was marked complete (ISO 8601). Null if not completed."
+        createdAt:
+          type: string
+          format: date-time
+          description: "Milestone creation timestamp (ISO 8601)."
+
+    GoalHabitLinkRequestDto:
+      type: object
+      required: [habitId]
+      properties:
+        habitId:
+          type: string
+          format: uuid
+          description: "UUID of the habit to link to this goal. The habit must be owned by the authenticated user."
+
+    GoalHabitLinkResponseDto:
+      type: object
+      required: [id, goalId, habitId, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: "Unique identifier of the habit-goal link."
+        goalId:
+          type: string
+          format: uuid
+          description: "ID of the goal in this link."
+        habitId:
+          type: string
+          format: uuid
+          description: "ID of the habit in this link."
+        createdAt:
+          type: string
+          format: date-time
+          description: "Timestamp when the habit was linked to the goal (ISO 8601)."
 
     ErrorResponseDto:
       type: object

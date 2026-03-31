@@ -14,6 +14,8 @@ public interface HabitRepository {
 
     Habit update(Habit habit);
 
+    List<HabitWithUser> findAllActiveWithReminderTime();
+
     record HabitPage(List<Habit> content, long totalElements, int totalPages, int page, int size) {
     }
 }

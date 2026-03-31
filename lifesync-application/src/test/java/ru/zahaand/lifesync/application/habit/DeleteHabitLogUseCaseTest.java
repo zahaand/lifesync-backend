@@ -102,8 +102,8 @@ class DeleteHabitLogUseCaseTest {
         }
 
         @Test
-        @DisplayName("Should propagate exception when publishEvent throws")
-        void shouldPropagateWhenPublishEventThrows() {
+        @DisplayName("Should not propagate exception when publishEvent throws")
+        void shouldNotPropagateWhenPublishEventThrows() {
             Habit habit = new Habit(HABIT_ID, USER_ID, "Test", null, Frequency.DAILY,
                     null, null, true, Instant.now(), Instant.now(), null);
             HabitLog log = new HabitLog(LOG_ID, HABIT_ID, USER_ID, LocalDate.of(2026, 3, 29),
@@ -115,8 +115,7 @@ class DeleteHabitLogUseCaseTest {
             doThrow(new RuntimeException("Event bus failure"))
                     .when(eventPublisher).publishEvent(any(HabitCompletedEvent.class));
 
-            assertThrows(RuntimeException.class,
-                    () -> useCase.execute(HABIT_ID, LOG_ID, USER_ID));
+            assertDoesNotThrow(() -> useCase.execute(HABIT_ID, LOG_ID, USER_ID));
         }
     }
 }

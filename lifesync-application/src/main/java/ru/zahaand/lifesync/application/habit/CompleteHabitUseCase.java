@@ -65,7 +65,12 @@ public class CompleteHabitUseCase {
                 logId.value(),
                 now
         );
-        eventPublisher.publishEvent(event);
+        try {
+            eventPublisher.publishEvent(event);
+        } catch (Exception e) {
+            log.error("Failed to publish HabitCompletedEvent: habitId={}, userId={}, error={}",
+                    habitId.value(), userId, e.getMessage(), e);
+        }
 
         log.info("Habit completed: habitId={}, logId={}, date={}", habitId.value(), logId.value(), logDate);
         return saved;

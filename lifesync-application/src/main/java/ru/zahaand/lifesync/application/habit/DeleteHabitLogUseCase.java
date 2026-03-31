@@ -53,7 +53,12 @@ public class DeleteHabitLogUseCase {
                 logId.value(),
                 now
         );
-        eventPublisher.publishEvent(event);
+        try {
+            eventPublisher.publishEvent(event);
+        } catch (Exception e) {
+            log.error("Failed to publish HabitCompletedEvent: habitId={}, userId={}, error={}",
+                    habitId.value(), userId, e.getMessage(), e);
+        }
 
         log.info("Habit log deleted: logId={}, habitId={}", logId.value(), habitId.value());
     }

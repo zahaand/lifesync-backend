@@ -128,8 +128,8 @@ class CompleteHabitUseCaseTest {
         }
 
         @Test
-        @DisplayName("Should propagate exception when publishEvent throws")
-        void shouldPropagateWhenPublishEventThrows() {
+        @DisplayName("Should not propagate exception when publishEvent throws")
+        void shouldNotPropagateWhenPublishEventThrows() {
             Habit habit = activeHabit();
             when(habitRepository.findByIdAndUserId(HABIT_ID, USER_ID)).thenReturn(Optional.of(habit));
             when(habitLogRepository.findByHabitIdAndLogDateAndUserId(HABIT_ID, LOG_DATE, USER_ID))
@@ -138,8 +138,10 @@ class CompleteHabitUseCaseTest {
             doThrow(new RuntimeException("Event bus failure"))
                     .when(eventPublisher).publishEvent(any(HabitCompletedEvent.class));
 
-            assertThrows(RuntimeException.class,
-                    () -> useCase.execute(HABIT_ID, USER_ID, LOG_DATE, "Done"));
+            HabitLog result = useCase.execute(HABIT_ID, USER_ID, LOG_DATE, "Done");
+
+            assertNotNull(result);
+            assertEquals(HABIT_ID, result.getHabitId());
         }
     }
 }

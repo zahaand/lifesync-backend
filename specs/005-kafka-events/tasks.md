@@ -395,7 +395,7 @@
   - Depends: T030, T021
   - Ref: Plan §7.4
 
-- [ ] T033 — Create `KafkaEventIT`: end-to-end event flow
+- [x] T033 — Create `KafkaEventIT`: end-to-end event flow
   - File: `lifesync-web/src/test/java/ru/zahaand/lifesync/web/event/KafkaEventIT.java`
   - Extends `BaseIT`
   - Test flow:
@@ -409,7 +409,7 @@
   - Depends: T030, T021, T023, T025
   - Ref: Plan §7.1, Spec §SC-002/SC-003
 
-- [ ] T034 — Create idempotency integration test in `KafkaEventIT`
+- [x] T034 — Create idempotency integration test in `KafkaEventIT`
   - File: `lifesync-web/src/test/java/ru/zahaand/lifesync/web/event/KafkaEventIT.java` (add `@Nested` class)
   - Test flow:
     1. Pre-insert a `processed_events` record for event_id + consumer group
@@ -419,7 +419,7 @@
   - Depends: T033
   - Ref: Plan §7.3, Spec §SC-003
 
-- [ ] T035 — Create DLQ integration test in `KafkaEventIT`
+- [x] T035 — Create DLQ integration test in `KafkaEventIT`
   - File: `lifesync-web/src/test/java/ru/zahaand/lifesync/web/event/KafkaEventIT.java` (add `@Nested` class)
   - Test flow:
     1. Publish event that will cause consumer to fail (e.g., non-existent habitId → HabitNotFoundException)
@@ -430,7 +430,7 @@
   - Depends: T033
   - Ref: Plan §7.2, Spec §SC-004
 
-- [ ] T036 — Verify full build passes with JaCoCo
+- [x] T036 — Verify full build passes with JaCoCo
   - Command: `mvn clean verify`
   - All unit tests and integration tests pass
   - JaCoCo ≥ 80% on `lifesync-domain` and `lifesync-application`

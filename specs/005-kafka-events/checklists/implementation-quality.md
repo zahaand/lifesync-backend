@@ -33,7 +33,7 @@
 - [ ] CHK019 - Are malformed events (deserialization failure, missing required fields) sent directly to DLQ WITHOUT retry, per Spec §FR-015? Is this configured separately from the 3-retry logic for processing failures? [Correctness, Spec §FR-015, Gap]
 - [ ] CHK020 - Is the `goal.progress.updated.dlq` topic created even though no consumers exist yet for `goal.progress.updated`? [Completeness, Spec §FR-014, Plan §1.1]
 - [ ] CHK021 - Does the DLQ message retain the original message headers (partition key, timestamp, event payload), so operators can inspect and replay? [Operability, Gap]
-- [ ] CHK022 - Is the retry behavior tested via integration test — specifically, is there a test that forces a consumer to fail 3 times and verifies the message appears in the DLQ topic? [Testability, Plan §7.2]
+- [x] CHK022 - Is the retry behavior tested via integration test — specifically, is there a test that forces a consumer to fail 3 times and verifies the message appears in the DLQ topic? [Testability, Plan §7.2]
 - [ ] CHK023 - If a consumer succeeds on retry (e.g., fails first attempt, succeeds second), is the idempotency record inserted only on success, not on the failed attempts? [Correctness, Plan §3.1]
 
 ## Async vs Sync Migration
@@ -48,7 +48,7 @@
 - [ ] CHK031 - Does `CompleteHabitUseCase` still return `HabitLog` synchronously to the controller, confirming the DB write succeeded regardless of event publishing outcome? [Correctness, Spec §FR-003]
 - [ ] CHK032 - Is the event publishing failure logged at ERROR level but NOT thrown, per FR-003? Does the HTTP response remain 201 even when Kafka is unreachable? [Critical, Spec §FR-003, Edge Cases]
 - [ ] CHK033 - Is there a test verifying that `CompleteHabitUseCase` succeeds (returns HabitLog) when `HabitEventPublisher.publish()` throws an exception? [Testability, Plan §6.1]
-- [ ] CHK034 - Does the existing `HabitControllerIT` test for habit completion now verify that the streak is EVENTUALLY updated (async polling) rather than IMMEDIATELY after the POST response? [Migration, Plan §7.4]
+- [x] CHK034 - Does the existing `HabitControllerIT` test for habit completion now verify that the streak is EVENTUALLY updated (async polling) rather than IMMEDIATELY after the POST response? [Migration, Plan §7.4]
 - [ ] CHK035 - Is the `UpdateHabitUseCase` still calling `StreakCalculatorService` synchronously for frequency changes, or is that also migrated to async? The plan says it remains sync — is this intentional? [Clarity, Plan §2.3, Gap]
 
 ## Telegram Adapter

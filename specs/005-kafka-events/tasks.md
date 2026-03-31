@@ -317,7 +317,7 @@
 
 ## Phase 4: Telegram Adapter (2 tasks)
 
-- [ ] T027 — Create `TelegramNotificationAdapter`
+- [x] T027 — Create `TelegramNotificationAdapter`
   - File: `lifesync-infrastructure/src/main/java/ru/zahaand/lifesync/infrastructure/notification/TelegramNotificationAdapter.java`
   - Implements `TelegramNotificationSender` domain port
   - Inject `@Value("${lifesync.telegram.enabled}") boolean enabled`
@@ -333,7 +333,7 @@
   - Depends: T014
   - Ref: Plan §4.1
 
-- [ ] T028 — Create `KafkaHabitEventPublisherTest`
+- [x] T028 — Create `KafkaHabitEventPublisherTest`
   - File: `lifesync-infrastructure/src/test/java/ru/zahaand/lifesync/infrastructure/event/KafkaHabitEventPublisherTest.java`
   - `@ExtendWith(MockitoExtension.class)`, `@Nested` per method, `@DisplayName` first
   - Tests:

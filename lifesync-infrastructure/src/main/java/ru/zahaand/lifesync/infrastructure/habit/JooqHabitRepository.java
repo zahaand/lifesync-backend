@@ -10,6 +10,7 @@ import ru.zahaand.lifesync.domain.habit.Frequency;
 import ru.zahaand.lifesync.domain.habit.Habit;
 import ru.zahaand.lifesync.domain.habit.HabitId;
 import ru.zahaand.lifesync.domain.habit.HabitRepository;
+import ru.zahaand.lifesync.domain.habit.HabitWithUser;
 
 import java.time.DayOfWeek;
 import java.time.OffsetDateTime;
@@ -23,6 +24,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static ru.zahaand.lifesync.infrastructure.generated.Tables.HABITS;
+import static ru.zahaand.lifesync.infrastructure.generated.Tables.USERS;
+import static ru.zahaand.lifesync.infrastructure.generated.Tables.USER_PROFILES;
 
 @Repository
 public class JooqHabitRepository implements HabitRepository {
@@ -112,6 +115,24 @@ public class JooqHabitRepository implements HabitRepository {
                 .execute();
 
         return habit;
+    }
+
+    @Override
+    public List<HabitWithUser> findAllActiveWithReminderTime() {
+        return dsl.select(
+                        HABITS.asterisk(),
+                        USER_PROFILES.TELEGRAM_CHAT_ID,
+                        USER_PROFILES.TIMEZONE)
+                .from(HABITS)
+                .join(USERS).on(HABITS.USER_ID.eq(USERS.ID))
+                .join(USER_PROFILES).on(USER_PROFILES.USER_ID.eq(USERS.ID))
+                .where(HABITS.REMINDER_TIME.isNotNull())
+                .and(HABITS.DELETED_AT.isNull())
+                .fetch(record -> new HabitWithUser(
+                        mapToHabit(record),
+                        record.get(USER_PROFILES.TELEGRAM_CHAT_ID),
+                        record.get(USER_PROFILES.TIMEZONE)
+                ));
     }
 
     private Habit mapToHabit(Record record) {

@@ -8,24 +8,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.zahaand.lifesync.api.model.CompleteHabitRequestDto;
-import ru.zahaand.lifesync.api.model.CreateHabitRequestDto;
-import ru.zahaand.lifesync.api.model.DayOfWeekDto;
-import ru.zahaand.lifesync.api.model.LoginRequestDto;
-import ru.zahaand.lifesync.api.model.RegisterRequestDto;
-import ru.zahaand.lifesync.api.model.UpdateHabitRequestDto;
+import ru.zahaand.lifesync.api.model.*;
 import ru.zahaand.lifesync.web.BaseIT;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -222,6 +216,30 @@ class HabitControllerIT extends BaseIT {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("Should eventually update streak via async consumer after completion")
+        void shouldEventuallyUpdateStreakAsync() throws Exception {
+            String habitId = createHabit("Async streak habit");
+
+            CompleteHabitRequestDto request = new CompleteHabitRequestDto()
+                    .date(LocalDate.now());
+
+            mockMvc.perform(post("/api/v1/habits/{id}/complete", habitId)
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated());
+
+            await().atMost(10, TimeUnit.SECONDS)
+                    .pollInterval(500, TimeUnit.MILLISECONDS)
+                    .untilAsserted(() ->
+                            mockMvc.perform(get("/api/v1/habits/{id}/streak", habitId)
+                                            .header("Authorization", "Bearer " + accessToken))
+                                    .andExpect(status().isOk())
+                                    .andExpect(jsonPath("$.currentStreak").value(1))
+                    );
         }
     }
 

@@ -9,31 +9,8 @@ import org.jooq.TableField;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
-
-import ru.zahaand.lifesync.infrastructure.generated.tables.Databasechangeloglock;
-import ru.zahaand.lifesync.infrastructure.generated.tables.GoalHabits;
-import ru.zahaand.lifesync.infrastructure.generated.tables.GoalMilestones;
-import ru.zahaand.lifesync.infrastructure.generated.tables.Goals;
-import ru.zahaand.lifesync.infrastructure.generated.tables.HabitLogs;
-import ru.zahaand.lifesync.infrastructure.generated.tables.HabitStreaks;
-import ru.zahaand.lifesync.infrastructure.generated.tables.Habits;
-import ru.zahaand.lifesync.infrastructure.generated.tables.NotificationLogs;
-import ru.zahaand.lifesync.infrastructure.generated.tables.ProcessedEvents;
-import ru.zahaand.lifesync.infrastructure.generated.tables.RefreshTokens;
-import ru.zahaand.lifesync.infrastructure.generated.tables.UserProfiles;
-import ru.zahaand.lifesync.infrastructure.generated.tables.Users;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.DatabasechangeloglockRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.GoalHabitsRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.GoalMilestonesRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.GoalsRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.HabitLogsRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.HabitStreaksRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.HabitsRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.NotificationLogsRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.ProcessedEventsRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.RefreshTokensRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.UserProfilesRecord;
-import ru.zahaand.lifesync.infrastructure.generated.tables.records.UsersRecord;
+import ru.zahaand.lifesync.infrastructure.generated.tables.*;
+import ru.zahaand.lifesync.infrastructure.generated.tables.records.*;
 
 
 /**
@@ -59,7 +36,7 @@ public class Keys {
     public static final UniqueKey<HabitsRecord> HABITS_PKEY = Internal.createUniqueKey(Habits.HABITS, DSL.name("habits_pkey"), new TableField[] { Habits.HABITS.ID }, true);
     public static final UniqueKey<NotificationLogsRecord> NOTIFICATION_LOGS_PKEY = Internal.createUniqueKey(NotificationLogs.NOTIFICATION_LOGS, DSL.name("notification_logs_pkey"), new TableField[] { NotificationLogs.NOTIFICATION_LOGS.ID }, true);
     public static final UniqueKey<ProcessedEventsRecord> PROCESSED_EVENTS_PKEY = Internal.createUniqueKey(ProcessedEvents.PROCESSED_EVENTS, DSL.name("processed_events_pkey"), new TableField[] { ProcessedEvents.PROCESSED_EVENTS.ID }, true);
-    public static final UniqueKey<ProcessedEventsRecord> UQ_PROCESSED_EVENTS_EVENT_ID = Internal.createUniqueKey(ProcessedEvents.PROCESSED_EVENTS, DSL.name("uq_processed_events_event_id"), new TableField[] { ProcessedEvents.PROCESSED_EVENTS.EVENT_ID }, true);
+    public static final UniqueKey<ProcessedEventsRecord> UQ_PROCESSED_EVENTS_EVENT_ID_CONSUMER_GROUP = Internal.createUniqueKey(ProcessedEvents.PROCESSED_EVENTS, DSL.name("uq_processed_events_event_id_consumer_group"), new TableField[] { ProcessedEvents.PROCESSED_EVENTS.EVENT_ID, ProcessedEvents.PROCESSED_EVENTS.CONSUMER_GROUP }, true);
     public static final UniqueKey<RefreshTokensRecord> REFRESH_TOKENS_PKEY = Internal.createUniqueKey(RefreshTokens.REFRESH_TOKENS, DSL.name("refresh_tokens_pkey"), new TableField[] { RefreshTokens.REFRESH_TOKENS.ID }, true);
     public static final UniqueKey<RefreshTokensRecord> UQ_REFRESH_TOKENS_TOKEN_HASH = Internal.createUniqueKey(RefreshTokens.REFRESH_TOKENS, DSL.name("uq_refresh_tokens_token_hash"), new TableField[] { RefreshTokens.REFRESH_TOKENS.TOKEN_HASH }, true);
     public static final UniqueKey<UserProfilesRecord> UQ_USER_PROFILES_USER_ID = Internal.createUniqueKey(UserProfiles.USER_PROFILES, DSL.name("uq_user_profiles_user_id"), new TableField[] { UserProfiles.USER_PROFILES.USER_ID }, true);

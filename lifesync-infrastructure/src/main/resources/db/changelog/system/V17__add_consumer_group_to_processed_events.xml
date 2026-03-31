@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="V17-add-consumer-group-to-processed-events" author="zahaand">
+        <addColumn tableName="processed_events">
+            <column name="consumer_group" type="varchar(100)" defaultValue="unknown">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <dropUniqueConstraint tableName="processed_events"
+                              constraintName="uq_processed_events_event_id"/>
+
+        <addUniqueConstraint tableName="processed_events"
+                             columnNames="event_id, consumer_group"
+                             constraintName="uq_processed_events_event_id_consumer_group"/>
+
+        <createIndex tableName="processed_events"
+                     indexName="idx_processed_events_event_id_consumer_group">
+            <column name="event_id"/>
+            <column name="consumer_group"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="processed_events"
+                       indexName="idx_processed_events_event_id_consumer_group"/>
+            <dropUniqueConstraint tableName="processed_events"
+                                  constraintName="uq_processed_events_event_id_consumer_group"/>
+            <addUniqueConstraint tableName="processed_events"
+                                 columnNames="event_id"
+                                 constraintName="uq_processed_events_event_id"/>
+            <dropColumn tableName="processed_events" columnName="consumer_group"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

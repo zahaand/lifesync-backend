@@ -27,4 +27,6 @@
     <include file="db/changelog/habit/V15__add_target_days_of_week_to_habits.xml"/>
     <include file="db/changelog/habit/V16__add_reminder_time_to_habits.xml"/>
 
+    <include file="db/changelog/system/V17__add_consumer_group_to_processed_events.xml"/>
+
 </databaseChangeLog>

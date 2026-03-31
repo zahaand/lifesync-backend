@@ -8,14 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.zahaand.lifesync.domain.habit.Frequency;
-import ru.zahaand.lifesync.domain.habit.Habit;
-import ru.zahaand.lifesync.domain.habit.HabitId;
-import ru.zahaand.lifesync.domain.habit.HabitLog;
-import ru.zahaand.lifesync.domain.habit.HabitLogRepository;
-import ru.zahaand.lifesync.domain.habit.HabitRepository;
-import ru.zahaand.lifesync.domain.habit.HabitStreak;
-import ru.zahaand.lifesync.domain.habit.HabitStreakRepository;
+import org.springframework.context.ApplicationEventPublisher;
+import ru.zahaand.lifesync.domain.event.HabitCompletedEvent;
+import ru.zahaand.lifesync.domain.habit.*;
 import ru.zahaand.lifesync.domain.habit.exception.DuplicateHabitLogException;
 import ru.zahaand.lifesync.domain.habit.exception.HabitInactiveException;
 import ru.zahaand.lifesync.domain.habit.exception.HabitNotFoundException;
@@ -24,16 +19,12 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CompleteHabitUseCaseTest {
@@ -43,9 +34,7 @@ class CompleteHabitUseCaseTest {
     @Mock
     private HabitLogRepository habitLogRepository;
     @Mock
-    private HabitStreakRepository habitStreakRepository;
-    @Mock
-    private StreakCalculatorService streakCalculatorService;
+    private ApplicationEventPublisher eventPublisher;
 
     private CompleteHabitUseCase useCase;
     private static final UUID USER_ID = UUID.randomUUID();
@@ -58,7 +47,7 @@ class CompleteHabitUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new CompleteHabitUseCase(habitRepository, habitLogRepository,
-                habitStreakRepository, streakCalculatorService, CLOCK);
+                eventPublisher, CLOCK);
     }
 
     private Habit activeHabit() {
@@ -75,18 +64,13 @@ class CompleteHabitUseCaseTest {
     class Execute {
 
         @Test
-        @DisplayName("Should complete habit and recalculate streak")
-        void shouldCompleteHabitSuccessfully() {
+        @DisplayName("Should complete habit and publish HabitCompletedEvent")
+        void shouldCompleteHabitAndPublishEvent() {
             Habit habit = activeHabit();
             when(habitRepository.findByIdAndUserId(HABIT_ID, USER_ID)).thenReturn(Optional.of(habit));
             when(habitLogRepository.findByHabitIdAndLogDateAndUserId(HABIT_ID, LOG_DATE, USER_ID))
                     .thenReturn(Optional.empty());
             when(habitLogRepository.save(any(HabitLog.class))).thenAnswer(i -> i.getArgument(0));
-            when(habitLogRepository.findLogDatesDesc(HABIT_ID, USER_ID)).thenReturn(Collections.emptyList());
-            when(streakCalculatorService.calculate(any(), any(), any(), any()))
-                    .thenReturn(new HabitStreak(HABIT_ID, 1, 1, LOG_DATE));
-            when(habitStreakRepository.findByHabitIdAndUserId(HABIT_ID, USER_ID))
-                    .thenReturn(Optional.of(new HabitStreak(HABIT_ID, 0, 0, null)));
 
             HabitLog result = useCase.execute(HABIT_ID, USER_ID, LOG_DATE, "Done");
 
@@ -94,11 +78,19 @@ class CompleteHabitUseCaseTest {
             assertEquals(LOG_DATE, result.getLogDate());
             assertEquals("Done", result.getNote());
 
-            ArgumentCaptor<HabitLog> captor = ArgumentCaptor.forClass(HabitLog.class);
-            verify(habitLogRepository).save(captor.capture());
-            assertEquals(HABIT_ID, captor.getValue().getHabitId());
+            ArgumentCaptor<HabitLog> logCaptor = ArgumentCaptor.forClass(HabitLog.class);
+            verify(habitLogRepository).save(logCaptor.capture());
+            assertEquals(HABIT_ID, logCaptor.getValue().getHabitId());
 
-            verify(habitStreakRepository).update(any(HabitStreak.class));
+            ArgumentCaptor<HabitCompletedEvent> eventCaptor = ArgumentCaptor.forClass(HabitCompletedEvent.class);
+            verify(eventPublisher).publishEvent(eventCaptor.capture());
+            HabitCompletedEvent event = eventCaptor.getValue();
+            assertEquals(HABIT_ID.value(), event.habitId());
+            assertEquals(USER_ID, event.userId());
+            assertEquals(LOG_DATE, event.logDate());
+            assertNotNull(event.completionId());
+            assertNotNull(event.eventId());
+            assertNotNull(event.occurredAt());
         }
 
         @Test
@@ -126,13 +118,30 @@ class CompleteHabitUseCaseTest {
             Habit habit = activeHabit();
             when(habitRepository.findByIdAndUserId(HABIT_ID, USER_ID)).thenReturn(Optional.of(habit));
             HabitLog existingLog = new HabitLog(
-                    new ru.zahaand.lifesync.domain.habit.HabitLogId(UUID.randomUUID()),
+                    new HabitLogId(UUID.randomUUID()),
                     HABIT_ID, USER_ID, LOG_DATE, null, Instant.now(), Instant.now(), null);
             when(habitLogRepository.findByHabitIdAndLogDateAndUserId(HABIT_ID, LOG_DATE, USER_ID))
                     .thenReturn(Optional.of(existingLog));
 
             assertThrows(DuplicateHabitLogException.class,
                     () -> useCase.execute(HABIT_ID, USER_ID, LOG_DATE, null));
+        }
+
+        @Test
+        @DisplayName("Should not propagate exception when publishEvent throws")
+        void shouldNotPropagateWhenPublishEventThrows() {
+            Habit habit = activeHabit();
+            when(habitRepository.findByIdAndUserId(HABIT_ID, USER_ID)).thenReturn(Optional.of(habit));
+            when(habitLogRepository.findByHabitIdAndLogDateAndUserId(HABIT_ID, LOG_DATE, USER_ID))
+                    .thenReturn(Optional.empty());
+            when(habitLogRepository.save(any(HabitLog.class))).thenAnswer(i -> i.getArgument(0));
+            doThrow(new RuntimeException("Event bus failure"))
+                    .when(eventPublisher).publishEvent(any(HabitCompletedEvent.class));
+
+            HabitLog result = useCase.execute(HABIT_ID, USER_ID, LOG_DATE, "Done");
+
+            assertNotNull(result);
+            assertEquals(HABIT_ID, result.getHabitId());
         }
     }
 }

@@ -124,6 +124,22 @@
   Templates requiring updates: none.
   Follow-up TODOs: none.
 
+  Version change: 1.2.4 → 1.2.5
+  Bump rationale: PATCH — new execution rule added to Development Standards
+                  rule 7 (Commits). Prevents context loss and quality
+                  degradation from oversized implement runs by enforcing
+                  atomic phase-by-phase execution with verification.
+
+  Modified sections:
+    - Development Standards, rule 7: added implementation execution rules
+      block (max 15 tasks per /speckit.implement run, one phase at a time,
+      verify + mark + commit after each phase).
+
+  Added sections: none.
+  Removed sections: none.
+  Templates requiring updates: none.
+  Follow-up TODOs: none.
+
   Version change: 1.2.4 → 1.3.0
   Bump rationale: MINOR — new Core Principle XII added (OpenAPI Documentation
                   Standards). Enforces portfolio-quality API documentation in
@@ -137,6 +153,18 @@
       named examples with real data, explanatory error responses, and field
       descriptions on every schema field.
 
+  Removed sections: none.
+  Templates requiring updates: none.
+  Follow-up TODOs: none.
+
+  Version change: 1.3.0 → 1.3.1
+  Bump rationale: PATCH — merge of changes from two branches. Combines
+                  Principle XII (OpenAPI Documentation Standards) from
+                  chore/swagger-and-docs-improvement with implementation
+                  execution rules (1.2.5) from 005-kafka-events.
+
+  Modified sections: none (content combined from both branches).
+  Added sections: none (all content already existed in respective branches).
   Removed sections: none.
   Templates requiring updates: none.
   Follow-up TODOs: none.
@@ -358,6 +386,12 @@ MUST be updated to reflect the new behavior before committing.
      (e.g. `fix/circular-dependency`, `chore/local-dev-setup`,
      `hotfix/token-expiry`).
    - Never use sprint numbers for non-SDD branches to avoid numbering gaps.
+   Implementation execution rules:
+   - NEVER run /speckit.implement on an entire sprint at once.
+   - Run /speckit.implement on ONE phase at a time (max 15 tasks per run).
+   - After each phase: verify build passes, mark tasks [x], commit.
+   - Phase boundary = natural checkpoint in tasks.md.
+   - If a phase has >15 tasks, split it into sub-phases.
 8. API change = YAML change first. PR without YAML update is PROHIBITED.
 9. Kafka topic/event changes: atomic PR (producers + consumers together).
 10. Kafka consumers: check `processed_events` for idempotency.
@@ -380,4 +414,4 @@ MUST be updated to reflect the new behavior before committing.
 **Compliance**: Claude Code and all reviews MUST verify Core Principles.
 Violations logged in `plan.md` Complexity Tracking with justification.
 
-**Version**: 1.3.0 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-30
+**Version**: 1.3.1 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-30

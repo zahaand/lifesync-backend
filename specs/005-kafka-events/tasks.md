@@ -351,7 +351,7 @@
 
 ## Phase 5: Test Infrastructure (3 tasks)
 
-- [ ] T029 — Add `testcontainers-kafka` dependency to web module
+- [x] T029 — Add `testcontainers-kafka` dependency to web module
   - File: `lifesync-web/pom.xml`
   - Add:
     ```xml
@@ -363,7 +363,7 @@
     ```
   - Ref: Plan §5.1
 
-- [ ] T030 — Update `BaseIT` with `KafkaContainer` Testcontainer
+- [x] T030 — Update `BaseIT` with `KafkaContainer` Testcontainer
   - File: `lifesync-web/src/test/java/ru/zahaand/lifesync/web/BaseIT.java`
   - Add `@Container static final KafkaContainer KAFKA = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"))`
   - Update `@DynamicPropertySource`:
@@ -373,7 +373,7 @@
   - Depends: T029
   - Ref: Plan §5.1
 
-- [ ] T031 — Verify existing integration tests pass with KafkaContainer
+- [x] T031 — Verify existing integration tests pass with KafkaContainer
   - Command: `mvn clean verify -pl lifesync-web`
   - All existing ITs (AuthControllerIT, UserControllerIT, AdminControllerIT, HabitControllerIT) must pass
   - HabitControllerIT may need adjustment: streak is now async (see T032)
@@ -386,7 +386,7 @@
 
 ## Phase 6: Integration Tests (5 tasks)
 
-- [ ] T032 — Update `HabitControllerIT`: async streak verification
+- [x] T032 — Update `HabitControllerIT`: async streak verification
   - File: `lifesync-web/src/test/java/ru/zahaand/lifesync/web/habit/HabitControllerIT.java`
   - Habit completion tests: POST still returns 201 immediately
   - Streak assertions: change from immediate check to polling with `Awaitility.await().atMost(10, SECONDS).untilAsserted(...)` or similar

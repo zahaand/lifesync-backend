@@ -5,12 +5,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
+import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 public abstract class BaseIT {
 
     static final PostgreSQLContainer<?> POSTGRES;
+    protected static final ConfluentKafkaContainer KAFKA;
 
     static {
         POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
@@ -18,6 +21,10 @@ public abstract class BaseIT {
                 .withUsername("test")
                 .withPassword("test");
         POSTGRES.start();
+
+        KAFKA = new ConfluentKafkaContainer(
+                DockerImageName.parse("confluentinc/cp-kafka:7.7.1"));
+        KAFKA.start();
     }
 
     @DynamicPropertySource
@@ -25,7 +32,8 @@ public abstract class BaseIT {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
-        registry.add("spring.kafka.bootstrap-servers", () -> "localhost:9092");
+        registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
+        registry.add("lifesync.telegram.enabled", () -> "false");
         registry.add("jwt.private-key", () -> TEST_PRIVATE_KEY);
         registry.add("jwt.public-key", () -> TEST_PUBLIC_KEY);
         registry.add("jwt.access-token-expiry", () -> "900");

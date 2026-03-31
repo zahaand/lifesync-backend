@@ -10,7 +10,6 @@ import ru.zahaand.lifesync.domain.goal.GoalMilestone;
 import ru.zahaand.lifesync.domain.goal.GoalMilestoneRepository;
 import ru.zahaand.lifesync.domain.goal.GoalRepository;
 import ru.zahaand.lifesync.domain.goal.exception.GoalNotFoundException;
-import ru.zahaand.lifesync.domain.habit.HabitId;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,13 +37,11 @@ public class GetGoalUseCase {
                 .orElseThrow(() -> new GoalNotFoundException("Goal not found: " + goalId.value()));
 
         List<GoalMilestone> milestones = milestoneRepository.findAllActiveByGoalId(goalId);
-        List<HabitId> linkedHabitIds = habitLinkRepository.findAllByGoalId(goalId).stream()
-                .map(GoalHabitLink::getHabitId)
-                .toList();
+        List<GoalHabitLink> habitLinks = habitLinkRepository.findAllByGoalId(goalId);
 
-        return new GoalDetail(goal, milestones, linkedHabitIds);
+        return new GoalDetail(goal, milestones, habitLinks);
     }
 
-    public record GoalDetail(Goal goal, List<GoalMilestone> milestones, List<HabitId> linkedHabitIds) {
+    public record GoalDetail(Goal goal, List<GoalMilestone> milestones, List<GoalHabitLink> habitLinks) {
     }
 }

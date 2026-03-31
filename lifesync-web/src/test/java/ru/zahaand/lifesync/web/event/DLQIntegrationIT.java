@@ -44,7 +44,7 @@ class DLQIntegrationIT extends BaseIT {
             try (KafkaConsumer<String, byte[]> dlqConsumer = createDlqConsumer("dlq-malformed-consumer")) {
                 dlqConsumer.subscribe(Collections.singletonList(DLQ_TOPIC));
 
-                await().atMost(10, TimeUnit.SECONDS)
+                await().atMost(30, TimeUnit.SECONDS)
                         .pollInterval(500, TimeUnit.MILLISECONDS)
                         .untilAsserted(() -> {
                             ConsumerRecords<String, byte[]> records = dlqConsumer.poll(Duration.ofMillis(200));

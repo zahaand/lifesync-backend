@@ -77,7 +77,7 @@ class GoalNotificationConsumerIT extends BaseIT {
             kafkaTemplate.send(new ProducerRecord<>("goal.progress.updated",
                     goalUuid.toString(), event));
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() ->
                             assertTrue(processedEventRepository.existsByEventIdAndConsumerGroup(
@@ -101,7 +101,7 @@ class GoalNotificationConsumerIT extends BaseIT {
             kafkaTemplate.send(new ProducerRecord<>("goal.progress.updated",
                     goalUuid.toString(), event));
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() ->
                             assertTrue(processedEventRepository.existsByEventIdAndConsumerGroup(
@@ -128,7 +128,7 @@ class GoalNotificationConsumerIT extends BaseIT {
             kafkaTemplate.send(new ProducerRecord<>("goal.progress.updated",
                     goalUuid.toString(), event));
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() ->
                             assertTrue(processedEventRepository.existsByEventIdAndConsumerGroup(

@@ -7,7 +7,7 @@
     <parent>
         <groupId>ru.zahaand</groupId>
         <artifactId>lifesync-backend</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>lifesync-web</artifactId>
@@ -87,6 +87,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.5.5</version>
                 <executions>
                     <execution>
                         <goals>

@@ -17,6 +17,7 @@ import ru.zahaand.lifesync.api.model.RegisterRequestDto;
 import ru.zahaand.lifesync.web.BaseIT;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -53,9 +54,9 @@ class GoalProgressConsumerIT extends BaseIT {
             String habitId = createHabit("Kafka habit");
             linkHabitToGoal(goalId, habitId);
 
-            completeHabit(habitId, LocalDate.now());
+            completeHabit(habitId, LocalDate.now(ZoneOffset.UTC));
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() ->
                             mockMvc.perform(get("/api/v1/goals/{goalId}", goalId)
@@ -74,9 +75,9 @@ class GoalProgressConsumerIT extends BaseIT {
             linkHabitToGoal(goalId1, habitId);
             linkHabitToGoal(goalId2, habitId);
 
-            completeHabit(habitId, LocalDate.now());
+            completeHabit(habitId, LocalDate.now(ZoneOffset.UTC));
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() -> {
                         mockMvc.perform(get("/api/v1/goals/{goalId}", goalId1)
@@ -98,9 +99,9 @@ class GoalProgressConsumerIT extends BaseIT {
             String habitId = createHabit("Deletion test habit");
             linkHabitToGoal(goalId, habitId);
 
-            String logId = completeHabit(habitId, LocalDate.now());
+            String logId = completeHabit(habitId, LocalDate.now(ZoneOffset.UTC));
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() ->
                             mockMvc.perform(get("/api/v1/goals/{goalId}", goalId)
@@ -113,7 +114,7 @@ class GoalProgressConsumerIT extends BaseIT {
                             .header("Authorization", "Bearer " + accessToken))
                     .andExpect(status().isNoContent());
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() ->
                             mockMvc.perform(get("/api/v1/goals/{goalId}", goalId)

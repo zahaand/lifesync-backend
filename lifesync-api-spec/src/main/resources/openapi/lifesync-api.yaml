@@ -10,7 +10,7 @@ info:
     3. **Authorize:** click the **Authorize** button (top right of this page), paste the `accessToken`
     4. All authenticated endpoints will use your token automatically
     5. When the token expires (15 min): use `POST /api/v1/auth/refresh` with your `refreshToken` to get a new pair
-  version: 0.1.0
+  version: 1.0.0
   contact:
     name: zahaand
 

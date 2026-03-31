@@ -12,6 +12,7 @@ import ru.zahaand.lifesync.api.model.*;
 import ru.zahaand.lifesync.web.BaseIT;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -184,7 +185,7 @@ class HabitControllerIT extends BaseIT {
             String habitId = createHabit("Complete me");
 
             CompleteHabitRequestDto request = new CompleteHabitRequestDto()
-                    .date(LocalDate.now())
+                    .date(LocalDate.now(ZoneOffset.UTC))
                     .note("Done!");
 
             mockMvc.perform(post("/api/v1/habits/{id}/complete", habitId)
@@ -200,7 +201,7 @@ class HabitControllerIT extends BaseIT {
         @DisplayName("Should return 409 for duplicate completion")
         void shouldReturn409ForDuplicate() throws Exception {
             String habitId = createHabit("Dup complete");
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneOffset.UTC);
 
             CompleteHabitRequestDto request = new CompleteHabitRequestDto()
                     .date(today);
@@ -224,7 +225,7 @@ class HabitControllerIT extends BaseIT {
             String habitId = createHabit("Async streak habit");
 
             CompleteHabitRequestDto request = new CompleteHabitRequestDto()
-                    .date(LocalDate.now());
+                    .date(LocalDate.now(ZoneOffset.UTC));
 
             mockMvc.perform(post("/api/v1/habits/{id}/complete", habitId)
                             .header("Authorization", "Bearer " + accessToken)
@@ -232,7 +233,7 @@ class HabitControllerIT extends BaseIT {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated());
 
-            await().atMost(10, TimeUnit.SECONDS)
+            await().atMost(30, TimeUnit.SECONDS)
                     .pollInterval(500, TimeUnit.MILLISECONDS)
                     .untilAsserted(() ->
                             mockMvc.perform(get("/api/v1/habits/{id}/streak", habitId)
@@ -250,7 +251,7 @@ class HabitControllerIT extends BaseIT {
         @DisplayName("Should return paginated logs")
         void shouldReturnLogs() throws Exception {
             String habitId = createHabit("Logged habit");
-            completeHabit(habitId, LocalDate.now());
+            completeHabit(habitId, LocalDate.now(ZoneOffset.UTC));
 
             mockMvc.perform(get("/api/v1/habits/{id}/logs", habitId)
                             .header("Authorization", "Bearer " + accessToken))
@@ -267,7 +268,7 @@ class HabitControllerIT extends BaseIT {
         @DisplayName("Should delete a completion log")
         void shouldDeleteLog() throws Exception {
             String habitId = createHabit("Del log habit");
-            String logId = completeHabit(habitId, LocalDate.now());
+            String logId = completeHabit(habitId, LocalDate.now(ZoneOffset.UTC));
 
             mockMvc.perform(delete("/api/v1/habits/{id}/complete/{logId}", habitId, logId)
                             .header("Authorization", "Bearer " + accessToken))

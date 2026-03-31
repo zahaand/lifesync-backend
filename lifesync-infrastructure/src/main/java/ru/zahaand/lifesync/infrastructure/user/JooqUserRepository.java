@@ -3,6 +3,7 @@ package ru.zahaand.lifesync.infrastructure.user;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 import ru.zahaand.lifesync.domain.user.Role;
 import ru.zahaand.lifesync.domain.user.User;
@@ -55,7 +56,7 @@ public class JooqUserRepository implements UserRepository {
         return dsl.select()
                 .from(USERS)
                 .leftJoin(USER_PROFILES).on(USERS.ID.eq(USER_PROFILES.USER_ID))
-                .where(USERS.USERNAME.lower().eq(username.toLowerCase()))
+                .where(DSL.lower(USERS.USERNAME).eq(username.toLowerCase()))
                 .and(USERS.DELETED_AT.isNull())
                 .fetchOptional(this::mapToUser);
     }
@@ -75,7 +76,7 @@ public class JooqUserRepository implements UserRepository {
         return dsl.fetchExists(
                 dsl.selectOne()
                         .from(USERS)
-                        .where(USERS.USERNAME.lower().eq(username.toLowerCase()))
+                        .where(DSL.lower(USERS.USERNAME).eq(username.toLowerCase()))
                         .and(USERS.DELETED_AT.isNull())
         );
     }
@@ -143,7 +144,7 @@ public class JooqUserRepository implements UserRepository {
 
     @Override
     public UserPage findAll(String status, String search, int page, int size) {
-        Condition condition = org.jooq.impl.DSL.trueCondition();
+        Condition condition = DSL.trueCondition();
 
         if (status != null) {
             condition = switch (status) {
@@ -157,8 +158,8 @@ public class JooqUserRepository implements UserRepository {
         if (search != null && !search.isBlank()) {
             String pattern = "%" + search.toLowerCase() + "%";
             condition = condition.and(
-                    USERS.EMAIL.lower().like(pattern)
-                            .or(USERS.USERNAME.lower().like(pattern))
+                    DSL.lower(USERS.EMAIL).like(pattern)
+                            .or(DSL.lower(USERS.USERNAME).like(pattern))
             );
         }
 

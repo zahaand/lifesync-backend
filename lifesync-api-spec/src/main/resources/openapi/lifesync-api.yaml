@@ -10,7 +10,7 @@ info:
     3. **Authorize:** click the **Authorize** button (top right of this page), paste the `accessToken`
     4. All authenticated endpoints will use your token automatically
     5. When the token expires (15 min): use `POST /api/v1/auth/refresh` with your `refreshToken` to get a new pair
-  version: 1.0.1
+  version: 1.0.2
   contact:
     name: zahaand
 
@@ -2460,7 +2460,7 @@ components:
 
     GoalResponseDto:
       type: object
-      required: [id, title, status, progress, createdAt]
+      required: [id, title, status, progress, milestones, createdAt]
       properties:
         id:
           type: string
@@ -2483,6 +2483,11 @@ components:
         progress:
           type: integer
           description: "Current progress percentage (0–100). Updated automatically from linked habits or manually via the progress endpoint."
+        milestones:
+          type: array
+          items:
+            $ref: '#/components/schemas/MilestoneResponseDto'
+          description: "First 3 active milestones ordered by sortOrder ASC. Empty list if goal has no milestones."
         createdAt:
           type: string
           format: date-time

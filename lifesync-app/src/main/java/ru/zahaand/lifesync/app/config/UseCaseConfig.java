@@ -186,8 +186,9 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public GetGoalsUseCase getGoalsUseCase(GoalRepository goalRepository) {
-        return new GetGoalsUseCase(goalRepository);
+    public GetGoalsUseCase getGoalsUseCase(GoalRepository goalRepository,
+                                            GoalMilestoneRepository milestoneRepository) {
+        return new GetGoalsUseCase(goalRepository, milestoneRepository);
     }
 
     @Bean

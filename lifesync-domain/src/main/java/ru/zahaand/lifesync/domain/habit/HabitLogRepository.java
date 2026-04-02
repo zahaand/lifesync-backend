@@ -2,6 +2,7 @@ package ru.zahaand.lifesync.domain.habit;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,6 +19,8 @@ public interface HabitLogRepository {
     HabitLog update(HabitLog habitLog);
 
     List<LocalDate> findLogDatesDesc(HabitId habitId, UUID userId);
+
+    Map<HabitId, HabitLog> findTodayLogsByHabitIds(List<HabitId> habitIds, LocalDate today);
 
     record HabitLogPage(List<HabitLog> content, long totalElements, int totalPages, int page, int size) {
     }

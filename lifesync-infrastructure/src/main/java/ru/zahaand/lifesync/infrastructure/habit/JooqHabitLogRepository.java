@@ -12,8 +12,11 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static ru.zahaand.lifesync.infrastructure.generated.Tables.HABIT_LOGS;
 
@@ -103,6 +106,24 @@ public class JooqHabitLogRepository implements HabitLogRepository {
                 .execute();
 
         return habitLog;
+    }
+
+    @Override
+    public Map<HabitId, HabitLog> findTodayLogsByHabitIds(List<HabitId> habitIds, LocalDate today) {
+        if (habitIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<UUID> ids = habitIds.stream().map(HabitId::value).toList();
+
+        return dsl.select()
+                .from(HABIT_LOGS)
+                .where(HABIT_LOGS.HABIT_ID.in(ids))
+                .and(HABIT_LOGS.LOG_DATE.eq(today))
+                .and(HABIT_LOGS.DELETED_AT.isNull())
+                .fetch(this::mapToHabitLog)
+                .stream()
+                .collect(Collectors.toMap(HabitLog::getHabitId, Function.identity()));
     }
 
     @Override

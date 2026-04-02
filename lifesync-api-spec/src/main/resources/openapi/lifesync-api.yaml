@@ -10,7 +10,7 @@ info:
     3. **Authorize:** click the **Authorize** button (top right of this page), paste the `accessToken`
     4. All authenticated endpoints will use your token automatically
     5. When the token expires (15 min): use `POST /api/v1/auth/refresh` with your `refreshToken` to get a new pair
-  version: 1.0.0
+  version: 1.0.1
   contact:
     name: zahaand
 
@@ -2275,7 +2275,7 @@ components:
 
     HabitResponseDto:
       type: object
-      required: [id, title, frequency, isActive, createdAt]
+      required: [id, title, frequency, isActive, createdAt, completedToday, currentStreak]
       properties:
         id:
           type: string
@@ -2302,6 +2302,17 @@ components:
         isActive:
           type: boolean
           description: "`true` = habit is active and accepts completions. `false` = habit is paused, completions are rejected."
+        completedToday:
+          type: boolean
+          description: "Whether the habit has been completed today (server date in UTC)."
+        todayLogId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Log ID of today's completion. Null if not completed today. Use to call DELETE /habits/{id}/complete/{logId}."
+        currentStreak:
+          type: integer
+          description: "Current consecutive completion streak in days."
         createdAt:
           type: string
           format: date-time

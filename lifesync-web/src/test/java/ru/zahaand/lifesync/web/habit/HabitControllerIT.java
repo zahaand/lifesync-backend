@@ -18,8 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -61,7 +60,10 @@ class HabitControllerIT extends BaseIT {
                     .andExpect(jsonPath("$.id").value(notNullValue()))
                     .andExpect(jsonPath("$.title").value("Morning run"))
                     .andExpect(jsonPath("$.frequency").value("DAILY"))
-                    .andExpect(jsonPath("$.isActive").value(true));
+                    .andExpect(jsonPath("$.isActive").value(true))
+                    .andExpect(jsonPath("$.completedToday").value(false))
+                    .andExpect(jsonPath("$.todayLogId").value(nullValue()))
+                    .andExpect(jsonPath("$.currentStreak").value(0));
         }
 
         @Test
@@ -111,7 +113,9 @@ class HabitControllerIT extends BaseIT {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content").isArray())
                     .andExpect(jsonPath("$.content", hasSize(2)))
-                    .andExpect(jsonPath("$.totalElements").value(2));
+                    .andExpect(jsonPath("$.totalElements").value(2))
+                    .andExpect(jsonPath("$.content[0].completedToday").value(false))
+                    .andExpect(jsonPath("$.content[0].currentStreak").value(0));
         }
     }
 
@@ -126,7 +130,10 @@ class HabitControllerIT extends BaseIT {
             mockMvc.perform(get("/api/v1/habits/{id}", habitId)
                             .header("Authorization", "Bearer " + accessToken))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.title").value("Get me"));
+                    .andExpect(jsonPath("$.title").value("Get me"))
+                    .andExpect(jsonPath("$.completedToday").value(false))
+                    .andExpect(jsonPath("$.todayLogId").value(nullValue()))
+                    .andExpect(jsonPath("$.currentStreak").value(0));
         }
 
         @Test
@@ -217,6 +224,27 @@ class HabitControllerIT extends BaseIT {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("Should set completedToday=true and todayLogId after completion")
+        void shouldSetCompletedTodayAfterCompletion() throws Exception {
+            String habitId = createHabit("Enriched habit");
+
+            CompleteHabitRequestDto request = new CompleteHabitRequestDto()
+                    .date(LocalDate.now(ZoneOffset.UTC));
+
+            mockMvc.perform(post("/api/v1/habits/{id}/complete", habitId)
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated());
+
+            mockMvc.perform(get("/api/v1/habits/{id}", habitId)
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.completedToday").value(true))
+                    .andExpect(jsonPath("$.todayLogId").value(notNullValue()));
         }
 
         @Test

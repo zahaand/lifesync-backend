@@ -4,18 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.zahaand.lifesync.application.goal.AddMilestoneUseCase;
-import ru.zahaand.lifesync.application.goal.CreateGoalUseCase;
-import ru.zahaand.lifesync.application.goal.DeleteGoalUseCase;
-import ru.zahaand.lifesync.application.goal.DeleteMilestoneUseCase;
-import ru.zahaand.lifesync.application.goal.GetGoalUseCase;
-import ru.zahaand.lifesync.application.goal.GetGoalsUseCase;
-import ru.zahaand.lifesync.application.goal.LinkHabitToGoalUseCase;
-import ru.zahaand.lifesync.application.goal.RecalculateGoalProgressUseCase;
-import ru.zahaand.lifesync.application.goal.UnlinkHabitFromGoalUseCase;
-import ru.zahaand.lifesync.application.goal.UpdateGoalProgressUseCase;
-import ru.zahaand.lifesync.application.goal.UpdateGoalUseCase;
-import ru.zahaand.lifesync.application.goal.UpdateMilestoneUseCase;
+import ru.zahaand.lifesync.application.goal.*;
 import ru.zahaand.lifesync.application.habit.*;
 import ru.zahaand.lifesync.application.user.*;
 import ru.zahaand.lifesync.domain.goal.GoalHabitLinkRepository;
@@ -123,13 +112,19 @@ public class TestUseCaseConfig {
     }
 
     @Bean
-    public GetHabitsUseCase getHabitsUseCase(HabitRepository habitRepository) {
-        return new GetHabitsUseCase(habitRepository);
+    public GetHabitsUseCase getHabitsUseCase(HabitRepository habitRepository,
+                                              HabitLogRepository habitLogRepository,
+                                              HabitStreakRepository habitStreakRepository,
+                                              Clock clock) {
+        return new GetHabitsUseCase(habitRepository, habitLogRepository, habitStreakRepository, clock);
     }
 
     @Bean
-    public GetHabitUseCase getHabitUseCase(HabitRepository habitRepository) {
-        return new GetHabitUseCase(habitRepository);
+    public GetHabitUseCase getHabitUseCase(HabitRepository habitRepository,
+                                            HabitLogRepository habitLogRepository,
+                                            HabitStreakRepository habitStreakRepository,
+                                            Clock clock) {
+        return new GetHabitUseCase(habitRepository, habitLogRepository, habitStreakRepository, clock);
     }
 
     @Bean

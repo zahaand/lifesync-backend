@@ -5,33 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import ru.zahaand.lifesync.api.HabitApi;
-import ru.zahaand.lifesync.api.model.CompleteHabitRequestDto;
-import ru.zahaand.lifesync.api.model.CreateHabitRequestDto;
-import ru.zahaand.lifesync.api.model.DayOfWeekDto;
-import ru.zahaand.lifesync.api.model.HabitLogPageResponseDto;
-import ru.zahaand.lifesync.api.model.HabitLogResponseDto;
-import ru.zahaand.lifesync.api.model.HabitPageResponseDto;
-import ru.zahaand.lifesync.api.model.HabitResponseDto;
-import ru.zahaand.lifesync.api.model.HabitStreakResponseDto;
-import ru.zahaand.lifesync.api.model.UpdateHabitRequestDto;
-import ru.zahaand.lifesync.application.habit.CompleteHabitUseCase;
-import ru.zahaand.lifesync.application.habit.CreateHabitUseCase;
-import ru.zahaand.lifesync.application.habit.DeleteHabitLogUseCase;
-import ru.zahaand.lifesync.application.habit.DeleteHabitUseCase;
-import ru.zahaand.lifesync.application.habit.GetHabitLogsUseCase;
-import ru.zahaand.lifesync.application.habit.GetHabitStreakUseCase;
-import ru.zahaand.lifesync.application.habit.GetHabitUseCase;
-import ru.zahaand.lifesync.application.habit.GetHabitsUseCase;
-import ru.zahaand.lifesync.application.habit.UpdateHabitUseCase;
-import ru.zahaand.lifesync.domain.habit.DayOfWeekSet;
-import ru.zahaand.lifesync.domain.habit.Frequency;
-import ru.zahaand.lifesync.domain.habit.Habit;
-import ru.zahaand.lifesync.domain.habit.HabitId;
-import ru.zahaand.lifesync.domain.habit.HabitLog;
-import ru.zahaand.lifesync.domain.habit.HabitLogId;
-import ru.zahaand.lifesync.domain.habit.HabitLogRepository;
-import ru.zahaand.lifesync.domain.habit.HabitRepository;
-import ru.zahaand.lifesync.domain.habit.HabitStreak;
+import ru.zahaand.lifesync.api.model.*;
+import ru.zahaand.lifesync.application.habit.*;
+import ru.zahaand.lifesync.domain.habit.*;
 import ru.zahaand.lifesync.domain.user.TokenProvider;
 
 import java.time.DayOfWeek;
@@ -92,10 +68,10 @@ public class HabitController implements HabitApi {
     @Override
     public ResponseEntity<HabitPageResponseDto> getHabits(String status, Integer page, Integer size) {
         UUID userId = getCurrentUserId();
-        HabitRepository.HabitPage result = getHabitsUseCase.execute(userId, status, page, size);
+        GetHabitsUseCase.EnrichedHabitPage result = getHabitsUseCase.execute(userId, status, page, size);
 
         List<HabitResponseDto> content = result.content().stream()
-                .map(this::toHabitResponse)
+                .map(this::toEnrichedHabitResponse)
                 .toList();
 
         HabitPageResponseDto response = new HabitPageResponseDto()
@@ -111,8 +87,8 @@ public class HabitController implements HabitApi {
     @Override
     public ResponseEntity<HabitResponseDto> getHabit(UUID id) {
         UUID userId = getCurrentUserId();
-        Habit habit = getHabitUseCase.execute(new HabitId(id), userId);
-        return ResponseEntity.ok(toHabitResponse(habit));
+        EnrichedHabit enriched = getHabitUseCase.execute(new HabitId(id), userId);
+        return ResponseEntity.ok(toEnrichedHabitResponse(enriched));
     }
 
     @Override
@@ -203,7 +179,22 @@ public class HabitController implements HabitApi {
         return claims.userId().value();
     }
 
+    private HabitResponseDto toEnrichedHabitResponse(EnrichedHabit enriched) {
+        HabitResponseDto dto = toBaseHabitResponse(enriched.habit());
+        dto.completedToday(enriched.completedToday());
+        dto.todayLogId(enriched.todayLogId() != null ? enriched.todayLogId().value() : null);
+        dto.currentStreak(enriched.currentStreak());
+        return dto;
+    }
+
     private HabitResponseDto toHabitResponse(Habit habit) {
+        HabitResponseDto dto = toBaseHabitResponse(habit);
+        dto.completedToday(false);
+        dto.currentStreak(0);
+        return dto;
+    }
+
+    private HabitResponseDto toBaseHabitResponse(Habit habit) {
         HabitResponseDto dto = new HabitResponseDto()
                 .id(habit.getId().value())
                 .title(habit.getTitle())

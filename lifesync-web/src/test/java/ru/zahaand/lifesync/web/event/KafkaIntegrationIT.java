@@ -16,6 +16,7 @@ import ru.zahaand.lifesync.api.model.RegisterRequestDto;
 import ru.zahaand.lifesync.web.BaseIT;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -55,7 +56,7 @@ class KafkaIntegrationIT extends BaseIT {
         @Test
         @DisplayName("Should publish HabitCompletedEvent and recalculate streak after habit completion")
         void shouldPublishEventAndRecalculateStreak() throws Exception {
-            LocalDate today = LocalDate.of(2026, 3, 31);
+            LocalDate today = LocalDate.now(ZoneOffset.UTC);
 
             CompleteHabitRequestDto request = new CompleteHabitRequestDto()
                     .date(today);

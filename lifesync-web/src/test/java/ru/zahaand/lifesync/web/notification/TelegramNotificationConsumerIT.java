@@ -21,6 +21,7 @@ import ru.zahaand.lifesync.web.TestTelegramNotificationSender;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -68,17 +69,18 @@ class TelegramNotificationConsumerIT extends BaseIT {
         @Test
         @DisplayName("Should send notification with habit title for streak milestone")
         void shouldSendNotificationWithHabitTitle() throws Exception {
+            LocalDate today = LocalDate.now(ZoneOffset.UTC);
             String habitId = createHabit("Morning run");
             UUID habitUuid = UUID.fromString(habitId);
 
-            for (int i = 0; i < 7; i++) {
-                LocalDate date = LocalDate.of(2026, 3, 25).plusDays(i);
+            for (int i = 6; i >= 0; i--) {
+                LocalDate date = today.minusDays(i);
                 completeHabit(habitId, date);
             }
 
             String eventId = UUID.randomUUID().toString();
             HabitCompletedEvent event = new HabitCompletedEvent(
-                    eventId, habitUuid, userId, LocalDate.of(2026, 3, 31),
+                    eventId, habitUuid, userId, today,
                     UUID.randomUUID(), Instant.now());
 
             kafkaTemplate.send(new ProducerRecord<>("habit.log.completed",

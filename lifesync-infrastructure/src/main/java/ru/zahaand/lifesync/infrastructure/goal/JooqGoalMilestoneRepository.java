@@ -10,8 +10,12 @@ import ru.zahaand.lifesync.domain.goal.GoalMilestoneRepository;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static ru.zahaand.lifesync.infrastructure.generated.Tables.GOAL_MILESTONES;
 
@@ -61,6 +65,33 @@ public class JooqGoalMilestoneRepository implements GoalMilestoneRepository {
                 .and(GOAL_MILESTONES.DELETED_AT.isNull())
                 .orderBy(GOAL_MILESTONES.SORT_ORDER.asc())
                 .fetch(this::mapToMilestone);
+    }
+
+    @Override
+    public Map<GoalId, List<GoalMilestone>> findFirst3ActiveByGoalIds(List<GoalId> goalIds) {
+        if (goalIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<UUID> ids = goalIds.stream().map(GoalId::value).toList();
+
+        List<GoalMilestone> allMilestones = dsl.select()
+                .from(GOAL_MILESTONES)
+                .where(GOAL_MILESTONES.GOAL_ID.in(ids))
+                .and(GOAL_MILESTONES.DELETED_AT.isNull())
+                .orderBy(GOAL_MILESTONES.SORT_ORDER.asc())
+                .fetch(this::mapToMilestone);
+
+        Map<GoalId, List<GoalMilestone>> result = new LinkedHashMap<>();
+        for (GoalMilestone milestone : allMilestones) {
+            result.computeIfAbsent(milestone.getGoalId(), k -> new ArrayList<>());
+            List<GoalMilestone> list = result.get(milestone.getGoalId());
+            if (list.size() < 3) {
+                list.add(milestone);
+            }
+        }
+
+        return result;
     }
 
     @Override

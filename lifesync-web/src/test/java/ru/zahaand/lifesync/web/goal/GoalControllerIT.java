@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.zahaand.lifesync.api.model.GoalCreateRequestDto;
 import ru.zahaand.lifesync.api.model.GoalUpdateRequestDto;
 import ru.zahaand.lifesync.api.model.LoginRequestDto;
+import ru.zahaand.lifesync.api.model.MilestoneCreateRequestDto;
 import ru.zahaand.lifesync.api.model.RegisterRequestDto;
 import ru.zahaand.lifesync.web.BaseIT;
 
@@ -60,7 +61,9 @@ class GoalControllerIT extends BaseIT {
                     .andExpect(jsonPath("$.id").value(notNullValue()))
                     .andExpect(jsonPath("$.title").value("Learn Java 21"))
                     .andExpect(jsonPath("$.status").value("ACTIVE"))
-                    .andExpect(jsonPath("$.progress").value(0));
+                    .andExpect(jsonPath("$.progress").value(0))
+                    .andExpect(jsonPath("$.milestones").isArray())
+                    .andExpect(jsonPath("$.milestones", hasSize(0)));
         }
 
         @Test
@@ -107,6 +110,39 @@ class GoalControllerIT extends BaseIT {
                     .andExpect(jsonPath("$.content").isArray())
                     .andExpect(jsonPath("$.content", hasSize(2)))
                     .andExpect(jsonPath("$.totalElements").value(2));
+        }
+
+        @Test
+        @DisplayName("Should return milestones in goal list response")
+        void shouldReturnMilestonesInList() throws Exception {
+            String goalId = createGoal("Goal with milestones");
+            addMilestone(goalId, "Step 1", 0);
+            addMilestone(goalId, "Step 2", 1);
+
+            mockMvc.perform(get("/api/v1/goals")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].milestones").isArray())
+                    .andExpect(jsonPath("$.content[0].milestones", hasSize(2)))
+                    .andExpect(jsonPath("$.content[0].milestones[0].title").value("Step 1"))
+                    .andExpect(jsonPath("$.content[0].milestones[1].title").value("Step 2"));
+        }
+
+        @Test
+        @DisplayName("Should return at most 3 milestones in goal list response")
+        void shouldReturnAtMost3Milestones() throws Exception {
+            String goalId = createGoal("Goal with many milestones");
+            addMilestone(goalId, "M1", 0);
+            addMilestone(goalId, "M2", 1);
+            addMilestone(goalId, "M3", 2);
+            addMilestone(goalId, "M4", 3);
+
+            mockMvc.perform(get("/api/v1/goals")
+                            .header("Authorization", "Bearer " + accessToken))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].milestones", hasSize(3)))
+                    .andExpect(jsonPath("$.content[0].milestones[0].title").value("M1"))
+                    .andExpect(jsonPath("$.content[0].milestones[2].title").value("M3"));
         }
 
         @Test
@@ -242,6 +278,18 @@ class GoalControllerIT extends BaseIT {
                 .getContentAsString();
 
         return objectMapper.readTree(response).get("accessToken").asText();
+    }
+
+    private void addMilestone(String goalId, String title, int sortOrder) throws Exception {
+        MilestoneCreateRequestDto request = new MilestoneCreateRequestDto()
+                .title(title)
+                .sortOrder(sortOrder);
+
+        mockMvc.perform(post("/api/v1/goals/{goalId}/milestones", goalId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
     }
 
     protected String createGoal(String title) throws Exception {

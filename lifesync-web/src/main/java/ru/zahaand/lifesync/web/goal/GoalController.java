@@ -32,7 +32,6 @@ import ru.zahaand.lifesync.domain.goal.GoalHabitLink;
 import ru.zahaand.lifesync.domain.goal.GoalId;
 import ru.zahaand.lifesync.domain.goal.GoalMilestone;
 import ru.zahaand.lifesync.domain.goal.GoalMilestoneId;
-import ru.zahaand.lifesync.domain.goal.GoalRepository;
 import ru.zahaand.lifesync.domain.goal.GoalStatus;
 import ru.zahaand.lifesync.domain.habit.HabitId;
 import ru.zahaand.lifesync.domain.user.TokenProvider;
@@ -99,10 +98,10 @@ public class GoalController implements GoalApi {
     public ResponseEntity<GoalPageResponseDto> getGoals(String status, Integer page, Integer size) {
         UUID userId = getCurrentUserId();
         GoalStatus goalStatus = status != null ? GoalStatus.valueOf(status) : null;
-        GoalRepository.GoalPage result = getGoalsUseCase.execute(userId, goalStatus, page, size);
+        GetGoalsUseCase.EnrichedGoalPage result = getGoalsUseCase.execute(userId, goalStatus, page, size);
 
         List<GoalResponseDto> content = result.content().stream()
-                .map(this::toGoalResponse)
+                .map(this::toEnrichedGoalResponse)
                 .toList();
 
         GoalPageResponseDto response = new GoalPageResponseDto()
@@ -219,6 +218,14 @@ public class GoalController implements GoalApi {
         return claims.userId().value();
     }
 
+    private GoalResponseDto toEnrichedGoalResponse(GetGoalsUseCase.EnrichedGoal enriched) {
+        GoalResponseDto dto = toGoalResponse(enriched.goal());
+        dto.milestones(enriched.milestones().stream()
+                .map(this::toMilestoneResponse)
+                .toList());
+        return dto;
+    }
+
     private GoalResponseDto toGoalResponse(Goal goal) {
         return new GoalResponseDto()
                 .id(goal.getId().value())
@@ -227,6 +234,7 @@ public class GoalController implements GoalApi {
                 .targetDate(goal.getTargetDate())
                 .status(GoalResponseDto.StatusEnum.fromValue(goal.getStatus().name()))
                 .progress(goal.getProgress())
+                .milestones(List.of())
                 .createdAt(goal.getCreatedAt().atOffset(ZoneOffset.UTC));
     }
 

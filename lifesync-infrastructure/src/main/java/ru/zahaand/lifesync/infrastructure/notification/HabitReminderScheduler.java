@@ -46,7 +46,6 @@ public class HabitReminderScheduler {
     @Scheduled(cron = "0 * * * * *")
     public void sendReminders() {
         if (!telegramEnabled) {
-            log.debug("Telegram disabled, skipping reminders");
             return;
         }
 

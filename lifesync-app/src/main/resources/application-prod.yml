@@ -6,30 +6,9 @@ spring:
   jooq:
     sql-dialect: POSTGRES
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
-    properties:
-      security.protocol: SASL_SSL
-      sasl.mechanism: SCRAM-SHA-256
-      sasl.jaas.config: >-
-        org.apache.kafka.common.security.scram.ScramLoginModule required
-        username="${KAFKA_SASL_USERNAME}"
-        password="${KAFKA_SASL_PASSWORD}";
-    producer:
-      properties:
-        security.protocol: SASL_SSL
-        sasl.mechanism: SCRAM-SHA-256
-        sasl.jaas.config: >-
-          org.apache.kafka.common.security.scram.ScramLoginModule required
-          username="${KAFKA_SASL_USERNAME}"
-          password="${KAFKA_SASL_PASSWORD}";
-    consumer:
-      properties:
-        security.protocol: SASL_SSL
-        sasl.mechanism: SCRAM-SHA-256
-        sasl.jaas.config: >-
-          org.apache.kafka.common.security.scram.ScramLoginModule required
-          username="${KAFKA_SASL_USERNAME}"
-          password="${KAFKA_SASL_PASSWORD}";
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    listener:
+      auto-startup: ${KAFKA_ENABLED:false}
 
 server:
   port: ${PORT:8080}

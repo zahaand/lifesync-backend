@@ -157,6 +157,24 @@ Every sprint follows the full SDD cycle: specify -> plan -> tasks -> implement -
 | Coverage | JaCoCo (>= 80%) |
 | Containers | Docker Compose (PostgreSQL + Kafka + Zookeeper) |
 
+## Demo Deployment Note
+
+The live demo on Railway runs **without Apache Kafka**.
+The following features require Kafka and are disabled in the demo:
+- Streak recalculation after habit completion (async)
+- Goal progress recalculation (async)
+- Telegram milestone notifications
+
+All other features work fully: Auth, Habits CRUD, Goals CRUD, User Profile, Admin.
+
+To enable full functionality, provide:
+```
+KAFKA_ENABLED=true
+KAFKA_BOOTSTRAP_SERVERS=your-kafka-broker:9092
+KAFKA_SASL_USERNAME=your-username
+KAFKA_SASL_PASSWORD=your-password
+```
+
 ## Local Setup
 
 ### Prerequisites
@@ -393,6 +411,24 @@ Spring `@Scheduled` cron-задача (`HabitReminderScheduler`) запуска�
 | Тесты | JUnit 5 + AssertJ + Mockito + Testcontainers |
 | Покрытие | JaCoCo (>= 80%) |
 | Контейнеры | Docker Compose (PostgreSQL + Kafka + Zookeeper) |
+
+## Примечание о demo-деплое
+
+Live demo на Railway работает **без Apache Kafka**.
+Следующие функции требуют Kafka и отключены в demo:
+- Асинхронный пересчёт стрика после выполнения привычки
+- Асинхронный пересчёт прогресса целей
+- Telegram-уведомления о вехах
+
+Все остальные функции работают полностью: Auth, Habits CRUD, Goals CRUD, профиль, Admin.
+
+Для включения полного функционала укажите переменные окружения:
+```
+KAFKA_ENABLED=true
+KAFKA_BOOTSTRAP_SERVERS=your-kafka-broker:9092
+KAFKA_SASL_USERNAME=your-username
+KAFKA_SASL_PASSWORD=your-password
+```
 
 ## Локальный запуск
 

@@ -1,0 +1,6 @@
+.git
+.idea
+**/target
+**/*.log
+.env
+lifesync-app/src/main/resources/certs/

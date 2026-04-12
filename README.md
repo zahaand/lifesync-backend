@@ -11,11 +11,8 @@ Built with Java 21 and Spring Boot 3.5 using Hexagonal Architecture (Ports & Ada
 
 32 REST endpoints | 6 Kafka consumers | 19 Liquibase migrations | 251 tests
 
-<img width="1552" height="922" alt="Снимок экрана — 2026-04-12 в 21 36 44" src="https://github.com/user-attachments/assets/71f9772b-8279-49e9-abd9-d3e093a995d1" />
+<img width="1880" height="5550" alt="Снимок экрана — 12 04 2026 в 22-04-43" src="https://github.com/user-attachments/assets/e45b0717-e5e0-408f-85f5-680b0ce72d67" />
 
-<img width="1552" height="922" alt="Снимок экрана — 2026-04-12 в 21 36 54" src="https://github.com/user-attachments/assets/70d2a151-0de9-4cda-8267-2473d1631003" />
-
-<img width="1552" height="922" alt="Снимок экрана — 2026-04-12 в 21 37 04" src="https://github.com/user-attachments/assets/fef1871e-7450-45ee-a95e-5e7bd8388524" />
 
 ## Methodology
 

@@ -7,7 +7,15 @@
 B2C habit and goal tracking platform REST API.
 Built with Java 21 and Spring Boot 3.5 using Hexagonal Architecture (Ports & Adapters).
 
+**Demo:** [LifeSynk web-app](https://lifesync-frontend-ten.vercel.app)
+
 32 REST endpoints | 6 Kafka consumers | 19 Liquibase migrations | 251 tests
+
+<img width="1552" height="922" alt="Снимок экрана — 2026-04-12 в 21 36 44" src="https://github.com/user-attachments/assets/71f9772b-8279-49e9-abd9-d3e093a995d1" />
+
+<img width="1552" height="922" alt="Снимок экрана — 2026-04-12 в 21 36 54" src="https://github.com/user-attachments/assets/70d2a151-0de9-4cda-8267-2473d1631003" />
+
+<img width="1552" height="922" alt="Снимок экрана — 2026-04-12 в 21 37 04" src="https://github.com/user-attachments/assets/fef1871e-7450-45ee-a95e-5e7bd8388524" />
 
 ## Methodology
 
@@ -255,12 +263,18 @@ After starting the application:
 3. Click **Authorize** (top right), paste the token
 4. All authenticated endpoints will use your token automatically
 
+## Related
+
+- [LifeSync Frontend](https://github.com/zahaand/lifesync-frontend) — React 19 and TypeScript 5.9
+
 ---
 
 # LifeSync Backend `v1.0.0`
 
 B2C REST API платформа для трекинга привычек и целей.
 Построена на Java 21 и Spring Boot 3.5 с использованием гексагональной архитектуры (Ports & Adapters).
+
+**Демо:** [LifeSynk web-app](https://lifesync-frontend-ten.vercel.app)
 
 32 REST-эндпоинта | 6 Kafka-консьюмеров | 19 Liquibase-миграций | 251 тест
 
@@ -509,3 +523,7 @@ mvn clean verify
 2. `POST /api/v1/auth/login` — скопируйте `accessToken` из ответа
 3. Нажмите **Authorize** (вверху справа), вставьте токен
 4. Все авторизованные эндпоинты будут использовать ваш токен автоматически
+
+## Связанные проекты
+
+- [LifeSync Frontend](https://github.com/zahaand/lifesync-frontend) — React 19 and TypeScript 5.9
